@@ -1,13 +1,12 @@
-﻿using CFW.ODataCore.DefaultHandlers;
+﻿using CFW.ODataCore.Attributes;
+using CFW.ODataCore.DefaultHandlers;
 using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.RouteMappers;
 using Microsoft.AspNetCore.OData.Abstracts;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
-using System.Linq.Expressions;
 
 namespace CFW.ODataCore.Models.Metadata;
 
@@ -23,7 +22,13 @@ public class MetadataEntity
 
     public required ODataQueryOptions ODataQueryOptions { get; init; }
 
+    public required EntityHandlerAttribute[] HandlerAttributes { get; init; }
+
     public IList<MetadataEntityAction> Operations { get; } = new List<MetadataEntityAction>();
+
+    public int NestedLevel { get; set; } = 1;
+
+    public required Type? ConfigurationType { get; init; }
 
     private static object _lockToken = new();
     private IODataFeature? _cachedFeature;
@@ -43,7 +48,14 @@ public class MetadataEntity
                 return _cachedFeature;
 
             var builder = new ODataConventionModelBuilder();
-            builder.EntitySet<TSource>(Name);
+            var entitySet = builder.EntitySet<TSource>(Name);
+
+            var entityType = builder.AddEntityType(SourceType);
+            builder.AddEntitySet(Name, entityType);
+            entityType.HasKey(KeyProperty!.PropertyInfo);
+
+            //TODO: add other properties
+
             builder.EnableLowerCamelCaseForPropertiesAndEnums();
 
             var model = builder.GetEdmModel();
@@ -64,67 +76,79 @@ public class MetadataEntity
         return _cachedFeature;
     }
 
-
     internal IProperty? KeyProperty { get; set; }
 
-    internal Expression<Func<TSource, bool>> BuilderEqualExpression<TSource>(DbSet<TSource> dbSet, object key)
-        where TSource : class
-    {
-        if (SourceType != typeof(TSource))
-            throw new InvalidOperationException($"Invalid source type {SourceType} for {typeof(TSource)}");
+    internal IEntityType? EFCoreEntityType { get; set; }
 
-        //build equal expression
-        var parameter = Expression.Parameter(typeof(TSource), "x");
-        var propertyExpr = Expression.Property(parameter, KeyProperty!.Name);
-
-        var valueExpr = Expression.Constant(key);
-        var equal = Expression.Equal(propertyExpr, valueExpr);
-        var predicate = Expression.Lambda<Func<TSource, bool>>(equal, parameter);
-
-        return predicate;
-    }
+    private static readonly object _lock = new();
 
     /// <summary>
-    /// Find key property for entity type
+    /// Find key property for entity type, complext types, collections
     /// </summary>
     /// <param name="dbContext"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    internal void InitSourceMetadata(DbContext dbContext)
+    internal void InitSourceMetadata(IServiceProvider serviceProvider)
     {
         if (KeyProperty is not null)
             return;
 
-        var entityType = dbContext.Model.FindEntityType(SourceType);
-        if (entityType is null)
-            throw new InvalidOperationException($"Entity type {SourceType} not found in DbContext");
-        var keyProperty = entityType.FindPrimaryKey();
-        if (keyProperty is null)
-            throw new InvalidOperationException($"Primary key not found for {SourceType}");
+        lock (_lock)
+        {
+            // Check if KeyProperty is already set to avoid redundant initialization
+            if (KeyProperty is not null)
+                return;
 
-        KeyProperty = keyProperty.Properties.Single();
+            using var scope = serviceProvider.CreateScope();
+            var dbContextProvider = scope.ServiceProvider.GetRequiredService<IDbContextProvider>();
+            var dbContext = dbContextProvider.GetDbContext();
+
+            var entityType = dbContext.Model.FindEntityType(SourceType);
+            if (entityType is null)
+                throw new InvalidOperationException($"Entity type {SourceType} not found in DbContext");
+
+            EFCoreEntityType = entityType;
+
+            var keyProperty = entityType.FindPrimaryKey();
+            if (keyProperty is null)
+                throw new InvalidOperationException($"Primary key not found for {SourceType}");
+
+            KeyProperty = keyProperty.Properties.Single();
+
+            var nestedEntityTypes = FindNestedEntityTypes(entityType, dbContext.Model, NestedLevel);
+
+            nestedEntityTypes.Add(EFCoreEntityType);
+            SupportEntities = nestedEntityTypes;
+        }
     }
 
-    /// <summary>
-    /// https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-9.0
-    /// </summary>
-    private static readonly Dictionary<Type, string> _typeToConstraintMap = new()
-    {
-        { typeof(int), "int" },
-        { typeof(bool), "bool" },
-        { typeof(DateTime), "datetime" },
-        { typeof(decimal), "decimal" },
-        { typeof(double), "double" },
-        { typeof(float), "float" },
-        { typeof(Guid), "guid" },
-        { typeof(long), "long" },
-        { typeof(string), "alpha" } // Example: alpha for alphabetic strings
-    };
+    public IEnumerable<IEntityType> SupportEntities { get; private set; } = new List<IEntityType>();
 
-    internal string GetKeyPattern()
+    private List<IEntityType> FindNestedEntityTypes(
+    IEntityType entityType,
+    IModel model,
+    int nestingLevel,
+    int currentLevel = 0)
     {
-        return _typeToConstraintMap.TryGetValue(KeyProperty!.ClrType, out var constraint)
-            ? $"{{key:{constraint}}}"
-            : "{key}";
+        if (currentLevel >= nestingLevel)
+            return new List<IEntityType>();
+
+        var nestedEntityTypes = new List<IEntityType>();
+
+        foreach (var navigation in entityType.GetNavigations())
+        {
+            var targetEntityType = navigation.TargetEntityType;
+
+            if (!nestedEntityTypes.Contains(targetEntityType))
+            {
+                nestedEntityTypes.Add(targetEntityType);
+
+                // Recursively find nested types
+                nestedEntityTypes.AddRange(
+                    FindNestedEntityTypes(targetEntityType, model, nestingLevel, currentLevel + 1));
+            }
+        }
+
+        return nestedEntityTypes;
     }
 
     internal void AddServices(IServiceCollection services)
@@ -149,13 +173,23 @@ public class MetadataEntity
 
             if (method == ApiMethod.Post)
             {
-                services.TryAddScoped(typeof(IEntityCreationHandler<>).MakeGenericType(SourceType)
-                    , typeof(EntityCreationHandler<>).MakeGenericType(SourceType));
+                //register entity creation handler
+                var serviceType = typeof(IEntityCreationHandler<>).MakeGenericType(SourceType);
+                var implementationType = typeof(EntityCreationHandler<>).MakeGenericType(SourceType);
 
+                var customImplemenationAttribute = HandlerAttributes
+                    .SingleOrDefault(x => x.InterfaceTypes!.Contains(serviceType));
+                if (customImplemenationAttribute is not null)
+                {
+                    implementationType = customImplemenationAttribute.TargetType!;
+                }
+                services.TryAddScoped(serviceType, implementationType);
+
+                //register entity creation route mapper
                 var getByKeyRouteMapperType = typeof(EntityCreationRouteMapper<>)
                     .MakeGenericType(SourceType);
                 services.AddKeyedSingleton(this
-                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, getByKeyRouteMapperType, k));
+                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, getByKeyRouteMapperType));
             }
         }
 

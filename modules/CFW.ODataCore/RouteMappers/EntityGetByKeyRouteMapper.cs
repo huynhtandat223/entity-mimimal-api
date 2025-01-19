@@ -6,23 +6,20 @@ using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
-using System.Text;
 
 namespace CFW.ODataCore.RouteMappers;
 
 public class EntityGetByKeyRouteMapper<TSource> : IRouteMapper
     where TSource : class
 {
-
     private readonly IRouteMapper _internalRouteMapper;
     public EntityGetByKeyRouteMapper(MetadataEntity metadata, IServiceScopeFactory serviceScopeFactory)
     {
+        //TODO: consider to use lazy initialization
         if (metadata.KeyProperty is null)
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var dbContextProvider = scope.ServiceProvider.GetRequiredService<IDbContextProvider>();
-            var db = dbContextProvider.GetDbContext();
-            metadata.InitSourceMetadata(db);
+            metadata.InitSourceMetadata(scope.ServiceProvider);
         }
 
         var internalRouteMapperType = typeof(EntityGetByKeyRouteMapper<,>)
@@ -49,22 +46,21 @@ public class EntityGetByKeyRouteMapper<TSource, TKey> : IRouteMapper
     public Task MapRoutes(RouteGroupBuilder routeGroupBuilder)
     {
         var ignoreQueryOptions = _metadata.ODataQueryOptions.IgnoreQueryOptions;
-        var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
-        formatter.SupportedEncodings.Add(Encoding.UTF8);
+        var keyPattern = this.GetKeyPattern<TKey>();
 
-        var routePattern = _metadata.GetKeyPattern();
-
-        routeGroupBuilder.MapGet(routePattern, async (HttpContext httpContext
+        routeGroupBuilder.MapGet(keyPattern, async (HttpContext httpContext
                 , TKey key
+                , ODataOutputFormatter formatter
                 , CancellationToken cancellationToken) =>
         {
+            //TODO: need to refactor, move to some data instance to configuration or metadata.
             var dbContextProvider = httpContext.RequestServices.GetRequiredService<IDbContextProvider>();
             var db = dbContextProvider.GetDbContext();
 
             var queryable = db.Set<TSource>().AsNoTracking();
 
             var feature = _metadata.CreateOrGetODataFeature<TSource>();
-            var predicate = _metadata.BuilderEqualExpression(db.Set<TSource>(), key);
+            var predicate = ExpressionUtils.BuilderEqualExpression<TSource>(key!, _metadata.KeyProperty!.Name);
 
             httpContext.Features.Set(feature);
 

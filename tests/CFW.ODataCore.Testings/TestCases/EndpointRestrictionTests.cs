@@ -8,7 +8,7 @@ namespace CFW.ODataCore.Testings.TestCases;
 public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
 {
     public EndpointRestrictionTests(ITestOutputHelper testOutputHelper, AppFactory factory)
-        : base(testOutputHelper, factory)
+        : base(testOutputHelper, factory, types: [typeof(Restriction)])
     {
     }
 
@@ -196,6 +196,5 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 }
             }
         }
-
     }
 }

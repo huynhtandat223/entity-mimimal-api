@@ -11,9 +11,11 @@ public class Customer : IEntity<int>
 
     public string? Address { get; set; }
 
-    public IEnumerable<Order>? Orders { get; set; }
+    public ICollection<Order>? Orders { get; set; } = new List<Order>();
 
     public Address? ShippingAddress { get; set; }
+
+    public Address? BillingAddress { get; set; }
 }
 
 public class Address : IEntity<int>

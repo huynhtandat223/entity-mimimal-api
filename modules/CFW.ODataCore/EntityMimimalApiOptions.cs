@@ -15,10 +15,8 @@ public class EntityMimimalApiOptions
 
     internal MetadataContainerFactory MetadataContainerFactory { get; set; } = new MetadataContainerFactory();
 
-    [Obsolete("Check side effect")]
     internal Action<ODataConventionModelBuilder>? ConfigureModelBuilder { get; set; }
 
-    [Obsolete("Check side effect")]
     internal Action<RouteGroupBuilder>? ConfigureContainerRouteGroup { get; set; }
 
     /// <summary>

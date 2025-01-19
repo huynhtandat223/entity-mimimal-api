@@ -3,9 +3,12 @@ using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Models;
 using CFW.ODataCore.Models.Metadata;
 using Microsoft.AspNetCore.OData;
+using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.Extensions.Options;
+using Microsoft.OData;
 using Microsoft.OData.ModelBuilder;
 using System.Reflection;
+using System.Text;
 
 namespace CFW.ODataCore;
 
@@ -27,6 +30,10 @@ public static class ServicesCollectionExtensions
             setupAction(coreOptions);
 
         services.AddOptions<ODataOptions>().Configure(coreOptions.ODataOptions);
+
+        var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
+        formatter.SupportedEncodings.Add(Encoding.UTF8);
+        services.AddSingleton(formatter);
 
         //register metadata containers
         var sanitizedRoutePrefix = StringUtils.SanitizeRoute(defaultRoutePrefix);
@@ -65,6 +72,7 @@ public static class ServicesCollectionExtensions
                 unboundOperation.AddServices(services);
             }
         }
+
         return services;
     }
 
@@ -110,9 +118,12 @@ public static class ServicesCollectionExtensions
 
         var entityRoute = containerGroupRoute
             .MapGroup(metadataEntity.Name)
-        .WithTags(metadataEntity.Name);
+            .WithTags(metadataEntity.Name)
+            .WithMetadata(metadataEntity);
 
-        //register entity authorization
+
+        //register entity authorization data
+        //TODO: move to entity metadata
         var authorizeAttributes = sourceType.GetCustomAttributes<EntityAuthorizeAttribute>();
         var authorizeDataOfMethods = authorizeAttributes.SelectMany(x => x.ApplyMethods
         .Select(m => new { Method = m, Attribute = x })
@@ -126,6 +137,7 @@ public static class ServicesCollectionExtensions
             var authorizeData = authorizeDataOfMethod.Single().Attribute;
             entityRoute = entityRoute.RequireAuthorization([authorizeData]);
         }
+
 
         //register CRUD routes
         var entityRouteMappers = app.Services.GetKeyedServices<IRouteMapper>(metadataEntity);

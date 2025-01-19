@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
-using System.Text;
 
 namespace CFW.ODataCore.RouteMappers;
 
@@ -15,7 +14,7 @@ public class EntityQueryRouteMapper<TSource> : IRouteMapper
 {
     private readonly MetadataEntity _metadata;
 
-    public EntityQueryRouteMapper(MetadataEntity metadata)
+    public EntityQueryRouteMapper(MetadataEntity metadata, IServiceScopeFactory serviceScopeFactory)
     {
         _metadata = metadata;
     }
@@ -24,12 +23,15 @@ public class EntityQueryRouteMapper<TSource> : IRouteMapper
     {
         var ignoreQueryOptions = _metadata.ODataQueryOptions.IgnoreQueryOptions;
 
-        var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
-        formatter.SupportedEncodings.Add(Encoding.UTF8);
-
         routeGroupBuilder.MapGet($"/", async (HttpContext httpContext
-                , CancellationToken cancellationToken) =>
+            , ODataOutputFormatter formatter
+            , CancellationToken cancellationToken) =>
         {
+            if (_metadata.KeyProperty is null)
+            {
+                _metadata.InitSourceMetadata(httpContext.RequestServices);
+            }
+
             var feature = _metadata.CreateOrGetODataFeature<TSource>();
             httpContext.Features.Set(feature);
 

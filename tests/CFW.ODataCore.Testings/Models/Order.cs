@@ -7,7 +7,7 @@ public class Order : IEntity<Guid>
 {
     public Guid Id { get; set; }
 
-    public Guid CustomerId { get; set; }
+    public Guid NewCustomerId { get; set; }
 
     public string? OrderNumber { get; set; }
 

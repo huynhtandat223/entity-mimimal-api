@@ -8,7 +8,7 @@ namespace CFW.ODataCore.Models.Deltas;
 public class EntityDelta<TEntity> : EntityDelta
     where TEntity : class
 {
-    public TEntity? Instance { get; set; }
+    public TEntity? Instance { get; set; } = Activator.CreateInstance<TEntity>();
 
     public EntityEndpoint<TEntity>? EntityConfiguration { get; set; }
 

@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace CFW.ODataCore.Models.Deltas;
 
 public class EntityDeltaConverter<TSource> : JsonConverter<EntityDelta<TSource>>
-    where TSource : class, new()
+    where TSource : class
 {
     private readonly MetadataEntityProperty _metadataEntityProperty;
 

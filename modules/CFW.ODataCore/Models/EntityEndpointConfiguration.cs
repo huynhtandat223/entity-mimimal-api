@@ -8,7 +8,12 @@ using System.Text.Json.Serialization;
 
 namespace CFW.ODataCore.Models;
 
-public class EntityEndpoint<TEntity>
+public class EntityEndpoint
+{
+
+}
+
+public class EntityEndpoint<TEntity> : EntityEndpoint
     where TEntity : class
 {
     public virtual Expression<Func<TEntity, TEntity>> Model { get; } = x => x;
@@ -25,9 +30,9 @@ public class EntityEndpoint<TEntity>
         var conveterType = typeof(EntityDeltaConverter<>).MakeGenericType(typeToConvert);
         var metadataEntityProperty = FindMetadataProperty(typeToConvert);
 
-        var converter = Activator.CreateInstance(conveterType, metadataEntityProperty);
+        var converter = Activator.CreateInstance(conveterType, metadataEntityProperty) as JsonConverter;
 
-        return (JsonConverter)converter!;
+        return converter!;
     }
 
     private MetadataEntityProperty FindMetadataProperty(Type typeToConvert)
@@ -125,6 +130,31 @@ public class EntityEndpoint<TEntity>
         return entity.Created();
     }
 
+    internal async Task<Result> PatchEntity<TKey>(EntityDelta<TEntity> delta
+        , TKey key
+        , IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    {
+        var dbContextProvider = serviceProvider.GetRequiredService<IDbContextProvider>();
+        var db = dbContextProvider.GetDbContext();
+
+        var dbEntity = await db.FindAsync<TEntity>([key], cancellationToken);
+        if (dbEntity is null)
+        {
+            return delta.Notfound();
+        }
+
+        var dbEntry = db.Entry(dbEntity!);
+        await ProcessChangedNavigationPropertiesRecursive(delta.ChangedProperties!, dbEntry, cancellationToken);
+        dbEntry.CurrentValues.SetValues(delta.Instance!);
+
+        var affected = await db.SaveChangesAsync(cancellationToken);
+        if (affected == 0)
+        {
+            return dbEntity.Failed("Failed to create entity");
+        }
+
+        return dbEntity.Success();
+    }
 
     private async Task ProcessChangedNavigationPropertiesRecursive(
         IDictionary<string, object> changedProperties,
@@ -165,5 +195,23 @@ public class EntityEndpoint<TEntity>
                     , itemEntry, cancellationToken);
             }
         }
+    }
+
+    internal async Task<Result> DeleteEntity<TKey>(TKey? key, IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    {
+        var dbContextProvider = serviceProvider.GetRequiredService<IDbContextProvider>();
+        var db = dbContextProvider.GetDbContext();
+        var dbEntity = await db.FindAsync<TEntity>(key, cancellationToken);
+        if (dbEntity is null)
+        {
+            return dbEntity.Notfound();
+        }
+        db.Remove(dbEntity);
+        var affected = await db.SaveChangesAsync(cancellationToken);
+        if (affected == 0)
+        {
+            return dbEntity.Failed("Failed to delete entity");
+        }
+        return dbEntity.Success();
     }
 }

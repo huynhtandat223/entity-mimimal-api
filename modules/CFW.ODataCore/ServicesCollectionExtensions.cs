@@ -138,7 +138,6 @@ public static class ServicesCollectionExtensions
             entityRoute = entityRoute.RequireAuthorization([authorizeData]);
         }
 
-
         //register CRUD routes
         var entityRouteMappers = app.Services.GetKeyedServices<IRouteMapper>(metadataEntity);
         foreach (var entityRouteMapper in entityRouteMappers)

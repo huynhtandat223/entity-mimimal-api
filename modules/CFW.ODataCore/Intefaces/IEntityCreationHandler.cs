@@ -8,8 +8,3 @@ public interface IEntityCreationHandler<TEntity>
     Task<Result> Handle(CreationCommand<TEntity> command, CancellationToken cancellationToken);
 }
 
-public interface IEntityPatchHandler<TEntity, TKey>
-    where TEntity : class
-{
-    Task<Result> Handle(PatchCommand<TEntity, TKey> command, CancellationToken cancellationToken);
-}

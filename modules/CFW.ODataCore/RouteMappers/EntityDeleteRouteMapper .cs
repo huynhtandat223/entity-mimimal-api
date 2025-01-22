@@ -1,16 +1,15 @@
 ﻿using CFW.ODataCore.Intefaces;
-using CFW.ODataCore.Models.Deltas;
 using CFW.ODataCore.Models.Metadata;
 using CFW.ODataCore.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CFW.ODataCore.RouteMappers;
 
-public class EntityPatchRouteMapper<TSource> : IRouteMapper
+public class EntityDeleteRouteMapper<TSource> : IRouteMapper
     where TSource : class
 {
     private readonly IRouteMapper _internalRouteMapper;
-    public EntityPatchRouteMapper(MetadataEntity metadata, IServiceScopeFactory serviceScopeFactory)
+    public EntityDeleteRouteMapper(MetadataEntity metadata, IServiceScopeFactory serviceScopeFactory)
     {
         //TODO: consider to use lazy initialization
         if (metadata.KeyProperty is null)
@@ -30,12 +29,12 @@ public class EntityPatchRouteMapper<TSource> : IRouteMapper
     }
 }
 
-public class EntityPatchRouteMapper<TSource, TKey> : IRouteMapper
+public class EntityDeleteRouteMapper<TSource, TKey> : IRouteMapper
     where TSource : class
 {
     private readonly MetadataEntity _metadata;
 
-    public EntityPatchRouteMapper(MetadataEntity metadata)
+    public EntityDeleteRouteMapper(MetadataEntity metadata)
     {
         _metadata = metadata;
     }
@@ -45,13 +44,14 @@ public class EntityPatchRouteMapper<TSource, TKey> : IRouteMapper
         var ignoreQueryOptions = _metadata.ODataQueryOptions.IgnoreQueryOptions;
         var keyPattern = this.GetKeyPattern<TKey>();
 
-        routeGroupBuilder.MapPatch(keyPattern, async (HttpContext httpContext
-            , EntityDelta<TSource> delta
-            , TKey key
-            , [FromServices] IEntityPatchHandler<TSource, TKey> handler
+        routeGroupBuilder.MapPatch(keyPattern, async (TKey key
+            , [FromServices] IServiceProvider serviceProvider
+            , [FromServices] IEntityDeletionHandler<TSource, TKey> handler
             , CancellationToken cancellationToken) =>
         {
-            var command = new PatchCommand<TSource, TKey>(delta, key);
+            var entityConfig = _metadata.GetOrCreateEndpointConfiguration<TSource>(serviceProvider);
+
+            var command = new DeletionCommand<TSource, TKey>(key) { EntityConfiguration = entityConfig };
             var result = await handler.Handle(command, cancellationToken);
             return result.ToResults();
         });

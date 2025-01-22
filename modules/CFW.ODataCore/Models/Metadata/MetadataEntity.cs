@@ -184,6 +184,14 @@ public class MetadataEntity
                     , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, mapperType, k));
             }
 
+            if (method == ApiMethod.Delete)
+            {
+                var mapperType = typeof(EntityPatchRouteMapper<>)
+                    .MakeGenericType(SourceType);
+                services.AddKeyedSingleton(this
+                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, mapperType, k));
+            }
+
             if (method == ApiMethod.Post)
             {
                 //register entity creation handler

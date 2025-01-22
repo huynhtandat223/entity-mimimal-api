@@ -6,49 +6,36 @@ using System.Text.Json;
 namespace CFW.ODataCore.Models.Deltas;
 
 public class EntityDelta<TEntity> : EntityDelta
-    where TEntity : class, new()
+    where TEntity : class
 {
     public TEntity? Instance { get; set; }
 
-    public EntityDelta()
-    {
-        Instance = new TEntity();
-    }
+    public EntityEndpoint<TEntity>? EntityConfiguration { get; set; }
 
     public override object? GetInstance() => Instance;
 
-    public static ValueTask<EntityDelta<TEntity>?> BindAsync(HttpContext context)
+    public static async ValueTask<EntityDelta<TEntity>?> BindAsync(HttpContext context)
     {
         var jsonOptions = context.RequestServices.GetRequiredService<IOptions<JsonOptions>>().Value;
         var metadata = context.GetEndpoint()!.Metadata.GetMetadata<MetadataEntity>();
 
+        if (metadata is null)
+        {
+            throw new InvalidOperationException("Metadata not found");
+        }
+
         var serviceProvider = context.RequestServices;
-        if (metadata!.KeyProperty is null)
-        {
-            metadata.InitSourceMetadata(serviceProvider);
-        }
+        var entityConfig = metadata.GetOrCreateEndpointConfiguration<TEntity>(serviceProvider);
 
-
-        EntityEndpoint<TEntity>? entityEndpoint = null;
-        if (metadata!.ConfigurationType is not null)
-        {
-            var customEntityEndpoint = ActivatorUtilities
-                .CreateInstance(serviceProvider, metadata.ConfigurationType) as EntityEndpoint<TEntity>;
-            entityEndpoint = customEntityEndpoint!;
-        }
-        else
-        {
-            entityEndpoint = new EntityEndpoint<TEntity>();
-        }
-
-        entityEndpoint!.SetMetadata(metadata);
-
-        var conveterFactory = new DeltaConverterFactory<TEntity>(entityEndpoint!);
+        var conveterFactory = new DeltaConverterFactory<TEntity>(entityConfig!);
         var customizedOptions = new JsonSerializerOptions(jsonOptions.SerializerOptions);
         customizedOptions.Converters.Add(conveterFactory);
 
-        var delta = JsonSerializer.DeserializeAsync<EntityDelta<TEntity>>(context.Request.Body
+        var delta = await JsonSerializer.DeserializeAsync<EntityDelta<TEntity>>(context.Request.Body
             , customizedOptions);
+
+        if (delta is not null)
+            delta.EntityConfiguration = entityConfig;
 
         return delta;
     }

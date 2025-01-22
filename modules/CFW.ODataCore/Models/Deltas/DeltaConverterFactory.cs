@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace CFW.ODataCore.Models.Deltas;
 
 public class DeltaConverterFactory<TEntity> : JsonConverterFactory
-    where TEntity : class, new()
+    where TEntity : class
 {
     private readonly EntityEndpoint<TEntity> _configuration;
 

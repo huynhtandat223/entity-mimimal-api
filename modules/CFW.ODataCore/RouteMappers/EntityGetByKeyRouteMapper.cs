@@ -1,11 +1,8 @@
 ﻿using CFW.ODataCore.Intefaces;
-using CFW.ODataCore.Models;
 using CFW.ODataCore.Models.Metadata;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OData;
 
 namespace CFW.ODataCore.RouteMappers;
 
@@ -53,16 +50,13 @@ public class EntityGetByKeyRouteMapper<TSource, TKey> : IRouteMapper
                 , ODataOutputFormatter formatter
                 , CancellationToken cancellationToken) =>
         {
-            //TODO: need to refactor, move to some data instance to configuration or metadata.
-            var dbContextProvider = httpContext.RequestServices.GetRequiredService<IDbContextProvider>();
-            var db = dbContextProvider.GetDbContext();
 
-            var queryable = db.Set<TSource>().AsNoTracking();
-
-            var feature = _metadata.CreateOrGetODataFeature<TSource>();
-            var predicate = ExpressionUtils.BuilderEqualExpression<TSource>(key!, _metadata.KeyProperty!.Name);
-
+            var feature = _metadata.CreateOrGetODataFeature<TSource>(httpContext.RequestServices);
             httpContext.Features.Set(feature);
+
+            var entityConfig = _metadata.GetOrCreateEndpointConfiguration<TSource>(httpContext.RequestServices);
+            var queryable = await entityConfig.GetQueryable(httpContext.RequestServices);
+            var predicate = ExpressionUtils.BuilderEqualExpression<TSource>(key!, _metadata.KeyProperty!.Name);
 
             queryable = queryable.Where(predicate);
 

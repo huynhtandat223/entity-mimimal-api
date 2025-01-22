@@ -1,5 +1,7 @@
 ﻿using CFW.ODataCore.Models.Deltas;
 using CFW.ODataCore.Models.Metadata;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq.Expressions;
 using System.Text.Json.Serialization;
@@ -7,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace CFW.ODataCore.Models;
 
 public class EntityEndpoint<TEntity>
-    where TEntity : class, new()
+    where TEntity : class
 {
     public virtual Expression<Func<TEntity, TEntity>> Model { get; } = x => x;
 
@@ -91,5 +93,77 @@ public class EntityEndpoint<TEntity>
             EntityProperties = entityProperties,
             ComplexProperties = complexProperties
         };
+    }
+
+    internal async Task<IQueryable<TEntity>> GetQueryable(IServiceProvider serviceProvider)
+    {
+        var dbContextProvider = serviceProvider.GetRequiredService<IDbContextProvider>();
+        var db = dbContextProvider.GetDbContext();
+        var queryable = db.Set<TEntity>().AsNoTracking();
+
+        return await Task.FromResult(queryable);
+    }
+
+
+    internal async Task<Result> CreateEntity(EntityDelta<TEntity> delta
+        , IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    {
+        var dbContextProvider = serviceProvider.GetRequiredService<IDbContextProvider>();
+        var db = dbContextProvider.GetDbContext();
+        var entity = delta.Instance!;
+
+        var entry = db.Add(entity);
+
+        await ProcessChangedNavigationPropertiesRecursive(delta.ChangedProperties!, entry, cancellationToken);
+
+        var affected = await db.SaveChangesAsync(cancellationToken);
+        if (affected == 0)
+        {
+            return entity.Failed("Failed to create entity");
+        }
+
+        return entity.Created();
+    }
+
+
+    private async Task ProcessChangedNavigationPropertiesRecursive(
+        IDictionary<string, object> changedProperties,
+        EntityEntry entry,
+        CancellationToken cancellationToken)
+    {
+        var entityDeltas = changedProperties
+            .Where(x => x.Value is EntityDelta delta && delta.EfCoreEntityType is not null);
+
+        foreach (var (key, value) in entityDeltas)
+        {
+            var delta = (EntityDelta)value;
+            var navigation = entry.Navigation(key);
+            if (!navigation.IsLoaded)
+            {
+                await navigation.LoadAsync(cancellationToken);
+            }
+            await ProcessChangedNavigationPropertiesRecursive(delta.ChangedProperties!
+                , entry.Context.Entry(navigation.CurrentValue!), cancellationToken);
+        }
+
+        var collectionDeltas = changedProperties
+            .Where(x => x.Value is EntityDeltaSet deltaSets);
+
+        foreach (var (key, value) in collectionDeltas)
+        {
+            var deltaSets = (EntityDeltaSet)value;
+            var navigation = entry.Navigation(key);
+            if (!navigation.IsLoaded)
+            {
+                await navigation.LoadAsync(cancellationToken);
+            }
+
+            foreach (var delta in deltaSets.ChangedProperties)
+            {
+                var itemEntry = entry.Context.Entry(delta.GetInstance()!);
+                await ProcessChangedNavigationPropertiesRecursive(delta!.ChangedProperties!
+                    , itemEntry, cancellationToken);
+            }
+        }
     }
 }

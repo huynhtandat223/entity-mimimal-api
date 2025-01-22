@@ -32,7 +32,7 @@ public class MetadataEntity
 
     private static object _lockToken = new();
     private IODataFeature? _cachedFeature;
-    public IODataFeature CreateOrGetODataFeature<TSource>()
+    public IODataFeature CreateOrGetODataFeature<TSource>(IServiceProvider serviceProvider)
         where TSource : class
     {
         if (_cachedFeature is not null)
@@ -47,6 +47,11 @@ public class MetadataEntity
             if (_cachedFeature is not null)
                 return _cachedFeature;
 
+            if (KeyProperty is null)
+            {
+                InitSourceMetadata(serviceProvider);
+            }
+
             var builder = new ODataConventionModelBuilder();
             var entitySet = builder.EntitySet<TSource>(Name);
 
@@ -54,7 +59,7 @@ public class MetadataEntity
             builder.AddEntitySet(Name, entityType);
             entityType.HasKey(KeyProperty!.PropertyInfo);
 
-            //TODO: add other properties
+            //TODO: add other odata properties
 
             builder.EnableLowerCamelCaseForPropertiesAndEnums();
 
@@ -171,6 +176,14 @@ public class MetadataEntity
                     , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, getByKeyRouteMapperType, k));
             }
 
+            if (method == ApiMethod.Patch)
+            {
+                var mapperType = typeof(EntityPatchRouteMapper<>)
+                    .MakeGenericType(SourceType);
+                services.AddKeyedSingleton(this
+                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, mapperType, k));
+            }
+
             if (method == ApiMethod.Post)
             {
                 //register entity creation handler
@@ -193,5 +206,32 @@ public class MetadataEntity
             }
         }
 
+    }
+
+    internal EntityEndpoint<TEntity> GetOrCreateEndpointConfiguration<TEntity>(IServiceProvider serviceProvider)
+        where TEntity : class
+    {
+        if (typeof(TEntity) != SourceType)
+            throw new InvalidOperationException($"Invalid source type {SourceType} for {typeof(TEntity)}");
+
+        if (KeyProperty is null)
+        {
+            InitSourceMetadata(serviceProvider);
+        }
+
+        EntityEndpoint<TEntity>? entityEndpoint = null;
+        if (ConfigurationType is not null)
+        {
+            var customEntityEndpoint = ActivatorUtilities
+                .CreateInstance(serviceProvider, ConfigurationType) as EntityEndpoint<TEntity>;
+            entityEndpoint = customEntityEndpoint!;
+        }
+        else
+        {
+            entityEndpoint = new EntityEndpoint<TEntity>();
+        }
+
+        entityEndpoint!.SetMetadata(this);
+        return entityEndpoint;
     }
 }

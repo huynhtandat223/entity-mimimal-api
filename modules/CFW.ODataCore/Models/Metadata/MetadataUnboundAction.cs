@@ -1,12 +1,12 @@
 ﻿using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.RouteMappers.Actions;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CFW.ODataCore.Models.Metadata;
 
 public class MetadataUnboundAction : MetadataAction
 {
-    internal void AddServices(IServiceCollection services)
+
+    internal void AddServices(RouteGroupBuilder containerGroupBuilder)
     {
         ResolveRequestResponseTypes();
 
@@ -17,7 +17,8 @@ public class MetadataUnboundAction : MetadataAction
                 .MakeGenericType(RequestType!, ResponseType!);
         var implementationType = TargetType;
 
-        services.TryAddScoped(interfaceType, implementationType);
+        ImplementationType = implementationType;
+        InterfaceType = interfaceType;
 
         //register operation routes
         Type? routeMapperType = null;
@@ -40,6 +41,7 @@ public class MetadataUnboundAction : MetadataAction
         if (routeMapperType is null)
             throw new InvalidOperationException("Invalid route mapper type");
 
-        services.AddKeyedSingleton(this, (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, routeMapperType, k));
+        var routeMapper = (IRouteMapper)Activator.CreateInstance(routeMapperType, this)!;
+        routeMapper.MapRoutes(containerGroupBuilder);
     }
 }

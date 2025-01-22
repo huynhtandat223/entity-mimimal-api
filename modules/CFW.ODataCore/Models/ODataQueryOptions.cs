@@ -8,8 +8,15 @@ public class ODataQueryOptions
 
     public AllowedQueryOptions IgnoreQueryOptions { get; private set; }
 
-    public void SetIgnoreQueryOptions(DefaultQueryConfigurations queryConfigurations)
+    public void SetIgnoreQueryOptions(DefaultQueryConfigurations queryConfigurations
+        , EntityEndpoint entityEndpoint)
     {
+        if (entityEndpoint.AllowedQueryOptions is not null)
+        {
+            IgnoreQueryOptions = ~entityEndpoint.AllowedQueryOptions.Value;
+            return;
+        }
+
         if (InternalAllowedQueryOptions is not null)
         {
             IgnoreQueryOptions = ~InternalAllowedQueryOptions.Value;

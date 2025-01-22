@@ -1,5 +1,6 @@
 ﻿using CFW.ODataCore.Models.Deltas;
 using CFW.ODataCore.Models.Metadata;
+using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -10,14 +11,13 @@ namespace CFW.ODataCore.Models;
 
 public class EntityEndpoint
 {
-
+    public AllowedQueryOptions? AllowedQueryOptions { get; set; }
 }
 
 public class EntityEndpoint<TEntity> : EntityEndpoint
     where TEntity : class
 {
     public virtual Expression<Func<TEntity, TEntity>> Model { get; } = x => x;
-
 
     private MetadataEntity? _metadata;
     internal void SetMetadata(MetadataEntity metadata)

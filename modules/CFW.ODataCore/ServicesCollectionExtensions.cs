@@ -1,9 +1,12 @@
 ﻿using CFW.ODataCore.Attributes;
+using CFW.ODataCore.DefaultHandlers;
 using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Models;
 using CFW.ODataCore.Models.Metadata;
+using CFW.ODataCore.RouteMappers;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.OData;
 using Microsoft.OData.ModelBuilder;
@@ -25,23 +28,21 @@ public static class ServicesCollectionExtensions
         , Action<EntityMimimalApiOptions>? setupAction = null
         , string defaultRoutePrefix = Constants.DefaultODataRoutePrefix)
     {
-        var coreOptions = new EntityMimimalApiOptions();
+        var coreOptions = new EntityMimimalApiOptions { DefaultRoutePrefix = defaultRoutePrefix };
         if (setupAction is not null)
             setupAction(coreOptions);
 
         services.AddOptions<ODataOptions>().Configure(coreOptions.ODataOptions);
+        services.AddSingleton(coreOptions);
 
+        //register OData output formatter
         var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
         formatter.SupportedEncodings.Add(Encoding.UTF8);
         services.AddSingleton(formatter);
 
-        //register metadata containers
-        var sanitizedRoutePrefix = StringUtils.SanitizeRoute(defaultRoutePrefix);
-        var containerFactory = coreOptions.MetadataContainerFactory;
-        var metadataContainers = containerFactory.CreateMetadataContainers(sanitizedRoutePrefix, coreOptions);
-
-        services.AddSingleton(metadataContainers);
-        services.AddSingleton(coreOptions);
+        services.TryAddScoped(typeof(IEntityCreationHandler<>), typeof(EntityCreationHandler<>));
+        services.TryAddScoped(typeof(IEntityPatchHandler<,>), typeof(EntityPatchHandler<,>));
+        services.TryAddScoped(typeof(IEntityDeletionHandler<,>), typeof(EntityDeletionHandler<,>));
 
         //register default db context provider
         if (coreOptions.DefaultDbContext is not null)
@@ -51,26 +52,21 @@ public static class ServicesCollectionExtensions
                 , contextProvider, coreOptions.DbServiceLifetime));
         }
 
-        //register internal services
-        foreach (var metadataContainer in metadataContainers)
+        var entityConfigInfoes = coreOptions.MetadataContainerFactory.CacheType
+            .Where(x => x.GetCustomAttributes<EntityAttribute>().Any())
+            .Where(x => x.BaseType is not null
+                && x.BaseType.IsGenericType
+                && x.BaseType.GetGenericTypeDefinition() == typeof(EntityEndpoint<>))
+            .Select(x => new { TargetType = x, Attributes = x.GetCustomAttributes<EntityAttribute>() });
+
+        foreach (var entityConfigInfo in entityConfigInfoes)
         {
-            var metadataEntities = metadataContainer.MetadataEntities;
-            foreach (var metadataEntity in metadataEntities)
-            {
-                metadataEntity.AddServices(services);
-            }
+            var interfaceType = entityConfigInfo.TargetType.GetInterfaces()
+                .Single(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(EntityEndpoint<>));
 
-            var entityOperations = metadataContainer.MetadataEntities.SelectMany(x => x.Operations);
-            foreach (var entityOperation in entityOperations)
-            {
-                entityOperation.AddServices(services);
-            }
+            var attribute = entityConfigInfo.Attributes.Single();
 
-            var unboundOperations = metadataContainer.UnboundOperations;
-            foreach (var unboundOperation in unboundOperations)
-            {
-                unboundOperation.AddServices(services);
-            }
+            services.TryAddKeyedSingleton(interfaceType, attribute.Name, entityConfigInfo.TargetType);
         }
 
         return services;
@@ -79,35 +75,46 @@ public static class ServicesCollectionExtensions
     public static void UseEntityMinimalApi(this WebApplication app)
     {
         var minimalApiOptions = app.Services.GetRequiredService<EntityMimimalApiOptions>();
+
+        //resolve all metadata containers
+        var sanitizedRoutePrefix = StringUtils.SanitizeRoute(minimalApiOptions.DefaultRoutePrefix);
+        var containerFactory = minimalApiOptions.MetadataContainerFactory;
+        var containers = containerFactory.CreateMetadataContainers(sanitizedRoutePrefix, minimalApiOptions);
+        var dbProvider = app.Services.GetRequiredService<IDbContextProvider>();
+        var db = dbProvider.GetDbContext();
+
         var odataOptions = app.Services.GetRequiredService<IOptions<ODataOptions>>().Value;
-        var containers = app.Services.GetRequiredService<IEnumerable<MetadataContainer>>();
         var defaultModel = new ODataConventionModelBuilder().GetEdmModel();
 
         foreach (var container in containers)
         {
-            if (container.MetadataEntities.Any(x => !x.Methods.Any()))
-                throw new NotImplementedException($"Entity no methods, maybe operation, need implement this case");
-
             var containerGroupRoute = app.MapGroup(container.RoutePrefix);
             container.Options.ConfigureContainerRouteGroup?.Invoke(containerGroupRoute);
 
-            foreach (var entityMetadata in container.MetadataEntities)
+            var metadataEntities = container.MetadataEntities;
+            foreach (var metadataEntity in metadataEntities)
             {
-                entityMetadata.ODataQueryOptions.SetIgnoreQueryOptions(odataOptions.QueryConfigurations);
-                RegisterEntityComponents(app, entityMetadata, containerGroupRoute);
+                var entityEndpointType = typeof(EntityEndpoint<>).MakeGenericType(metadataEntity.SourceType);
+                var endtityEndpointObj = app.Services
+                    .GetKeyedServices(entityEndpointType, metadataEntity.Name)
+                    .FirstOrDefault() ?? Activator.CreateInstance(entityEndpointType)!;
+
+                var entityEndpoint = endtityEndpointObj as EntityEndpoint;
+                metadataEntity.ODataQueryOptions.SetIgnoreQueryOptions(odataOptions.QueryConfigurations, entityEndpoint!);
+                RegisterEntityComponents(app, metadataEntity, containerGroupRoute);
             }
 
-            //register unbound operation routes
-            foreach (var operation in container.UnboundOperations)
+            var unboundOperations = container.UnboundOperations;
+            foreach (var unboundOperation in unboundOperations)
             {
-                var routeMapper = app.Services.GetRequiredKeyedService<IRouteMapper>(operation);
-                routeMapper.MapRoutes(containerGroupRoute);
+                unboundOperation.AddServices(containerGroupRoute);
             }
 
             //Add internal odata service providers
             odataOptions.AddRouteComponents(container.RoutePrefix, defaultModel);
             container.ODataInternalServiceProvider = odataOptions.RouteComponents[container.RoutePrefix].ServiceProvider;
         }
+
     }
 
     private static void RegisterEntityComponents(WebApplication app
@@ -115,12 +122,12 @@ public static class ServicesCollectionExtensions
     {
         var sourceType = metadataEntity.SourceType;
         var allowMethods = metadataEntity.Methods;
+        var serviceProvider = app.Services;
 
         var entityRoute = containerGroupRoute
             .MapGroup(metadataEntity.Name)
             .WithTags(metadataEntity.Name)
             .WithMetadata(metadataEntity);
-
 
         //register entity authorization data
         //TODO: move to entity metadata
@@ -139,17 +146,63 @@ public static class ServicesCollectionExtensions
         }
 
         //register CRUD routes
-        var entityRouteMappers = app.Services.GetKeyedServices<IRouteMapper>(metadataEntity);
-        foreach (var entityRouteMapper in entityRouteMappers)
+        foreach (var method in metadataEntity.Methods)
         {
-            entityRouteMapper.MapRoutes(entityRoute);
+            if (method == ApiMethod.Query)
+            {
+                var routeMapperType = typeof(EntityQueryRouteMapper<>)
+                    .MakeGenericType(metadataEntity.SourceType);
+                var routeMapper = (IRouteMapper)ActivatorUtilities
+                    .CreateInstance(serviceProvider, routeMapperType, metadataEntity);
+
+                routeMapper.MapRoutes(entityRoute);
+            }
+
+            if (method == ApiMethod.GetByKey)
+            {
+                var routeMapperType = typeof(EntityGetByKeyRouteMapper<>)
+                    .MakeGenericType(metadataEntity.SourceType);
+                var routeMapper = (IRouteMapper)ActivatorUtilities
+                    .CreateInstance(serviceProvider, routeMapperType, metadataEntity);
+
+                routeMapper.MapRoutes(entityRoute);
+            }
+
+            if (method == ApiMethod.Patch)
+            {
+                var routeMapperType = typeof(EntityPatchRouteMapper<>)
+                    .MakeGenericType(metadataEntity.SourceType);
+                var routeMapper = (IRouteMapper)ActivatorUtilities
+                    .CreateInstance(serviceProvider, routeMapperType, metadataEntity);
+
+                routeMapper.MapRoutes(entityRoute);
+            }
+
+            if (method == ApiMethod.Delete)
+            {
+                var routeMapperType = typeof(EntityDeleteRouteMapper<>)
+                    .MakeGenericType(metadataEntity.SourceType);
+                var routeMapper = (IRouteMapper)ActivatorUtilities
+                    .CreateInstance(serviceProvider, routeMapperType, metadataEntity);
+
+                routeMapper.MapRoutes(entityRoute);
+            }
+
+            if (method == ApiMethod.Post)
+            {
+                var routeMapperType = typeof(EntityCreationRouteMapper<>)
+                    .MakeGenericType(metadataEntity.SourceType);
+                var routeMapper = (IRouteMapper)ActivatorUtilities
+                    .CreateInstance(serviceProvider, routeMapperType);
+
+                routeMapper.MapRoutes(entityRoute);
+            }
         }
 
         //register entity operation routes
         foreach (var operation in metadataEntity.Operations)
         {
-            var routeMapper = app.Services.GetRequiredKeyedService<IRouteMapper>(operation);
-            routeMapper.MapRoutes(entityRoute);
+            operation.AddServices(entityRoute);
         }
     }
 }

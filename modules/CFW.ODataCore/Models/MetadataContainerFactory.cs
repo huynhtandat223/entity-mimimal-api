@@ -72,23 +72,12 @@ public class MetadataContainerFactory : IAssemblyResolver
 
                 //find entity type
                 var sourceType = key.Key.TargetType!;
-                Type? configurationType = null;
-                var isConfigurationType = key.Key.TargetType!.BaseType is not null
-                    && key.Key.TargetType!.BaseType.IsGenericType
-                    && key.Key.TargetType.BaseType.GetGenericTypeDefinition() == typeof(EntityEndpoint<>);
-                if (isConfigurationType)
-                {
-                    sourceType = key.Key.TargetType.BaseType!.GenericTypeArguments[0];
-                    configurationType = key.Key.TargetType;
-                }
-
                 var handlerTypes = handlerAttributes
                     .Where(x => x.EntityType == sourceType && (x.Name.IsNullOrWhiteSpace() || x.Name == endpoint))
                     .ToArray();
 
                 var metadataEntity = new MetadataEntity
                 {
-                    ConfigurationType = configurationType,
                     HandlerAttributes = handlerTypes,
                     Name = endpoint,
                     Methods = key.Select(x => x.Method).ToArray(),

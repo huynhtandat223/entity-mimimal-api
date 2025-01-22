@@ -3,7 +3,6 @@ using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Models;
 using CFW.ODataCore.Models.Metadata;
 using CFW.ODataCore.Models.Requests;
-using CFW.ODataCore.RouteMappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CFW.ODataCore.RouteMappers.Actions;
@@ -30,14 +29,16 @@ public static class ActionRouteMapperExtensions
         var mappedMethods = MapHttpMethods(actionMetadata.HttpMethod);
         var actionName = actionMetadata.ActionName;
 
-        routeGroupBuilder.MapMethods(actionName, mappedMethods, async (
-                [FromServices] IOperationHandler<TRequest> handler
-                , [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest
-                , HttpContext httpContext, CancellationToken cancellationToken) =>
+        routeGroupBuilder.MapMethods(actionName, mappedMethods, async ([FromBody] TRequest? request
+            , QueryRequest<TRequest> queryRequest
+            , HttpContext httpContext, CancellationToken cancellationToken) =>
         {
             request ??= queryRequest.QueryModel;
             if (request is null)
                 return Results.BadRequest("Invalid Request");
+
+            var handler = (IOperationHandler<TRequest>)ActivatorUtilities
+            .CreateInstance(httpContext.RequestServices, actionMetadata.ImplementationType!);
 
             var result = await handler.Handle(request, cancellationToken);
             return result.ToResults();
@@ -57,10 +58,8 @@ public static class ActionRouteMapperExtensions
                 : $"{actionName}/{{key}}";
 
         routeGroupBuilder.MapMethods(routePattern, mappedMethods, async (
-            [FromServices] IOperationHandler<TRequest> handler
-            , [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest
-            , TKey key
-            , HttpContext httpContext, CancellationToken cancellationToken) =>
+            [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest
+            , TKey key, HttpContext httpContext, CancellationToken cancellationToken) =>
         {
             request ??= queryRequest.QueryModel;
             if (request is null)
@@ -75,6 +74,8 @@ public static class ActionRouteMapperExtensions
             }
             setter.DynamicInvoke(request, key);
 
+            var handler = (IOperationHandler<TRequest>)ActivatorUtilities
+            .CreateInstance(httpContext.RequestServices, actionMetadata.ImplementationType!);
 
             var result = await handler.Handle(request, cancellationToken);
             return result.ToResults();
@@ -89,14 +90,17 @@ public static class ActionRouteMapperExtensions
         var mappedMethods = MapHttpMethods(actionMetadata.HttpMethod);
         var actionName = actionMetadata.ActionName;
 
-        routeGroupBuilder.MapMethods(actionName, mappedMethods, async (
-                [FromServices] IOperationHandler<TRequest, TResponse> handler
-                , [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest
-                , CancellationToken cancellationToken) =>
+        routeGroupBuilder.MapMethods(actionName, mappedMethods, async ([FromBody] TRequest? request
+            , QueryRequest<TRequest> queryRequest
+            , HttpContext httpContext
+            , CancellationToken cancellationToken) =>
         {
             request ??= queryRequest.QueryModel;
             if (request is null)
                 return Results.BadRequest("Invalid Request");
+
+            var handler = (IOperationHandler<TRequest, TResponse>)ActivatorUtilities
+                .CreateInstance(httpContext.RequestServices, actionMetadata.ImplementationType!);
 
             var result = await handler.Handle(request, cancellationToken);
             return result.ToResults();
@@ -116,9 +120,8 @@ public static class ActionRouteMapperExtensions
                 ? $"{{key}}/{actionName}"
                 : $"{actionName}/{{key}}";
 
-        routeGroupBuilder.MapMethods(routePattern, mappedMethods, async (
-          [FromServices] IOperationHandler<TRequest, TResponse> handler
-          , [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest
+        routeGroupBuilder.MapMethods(routePattern, mappedMethods, async ([FromBody] TRequest? request
+            , QueryRequest<TRequest> queryRequest
             , TKey key,
         HttpContext httpContext, CancellationToken cancellationToken) =>
         {
@@ -136,6 +139,8 @@ public static class ActionRouteMapperExtensions
 
             setter.DynamicInvoke(request, key);
 
+            var handler = (IOperationHandler<TRequest, TResponse>)ActivatorUtilities
+                .CreateInstance(httpContext.RequestServices, actionMetadata.ImplementationType!);
             var result = await handler.Handle(request, cancellationToken);
             return result.ToResults();
         });

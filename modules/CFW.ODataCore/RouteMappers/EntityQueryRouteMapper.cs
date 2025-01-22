@@ -18,7 +18,6 @@ public class EntityQueryRouteMapper<TSource> : IRouteMapper
 
     public Task MapRoutes(RouteGroupBuilder routeGroupBuilder)
     {
-        var ignoreQueryOptions = _metadata.ODataQueryOptions.IgnoreQueryOptions;
 
         routeGroupBuilder.MapGet($"/", async (HttpContext httpContext
             , ODataOutputFormatter formatter
@@ -28,8 +27,10 @@ public class EntityQueryRouteMapper<TSource> : IRouteMapper
             httpContext.Features.Set(feature);
 
             var entityConfig = _metadata.GetOrCreateEndpointConfiguration<TSource>(httpContext.RequestServices);
+
             var queryable = await entityConfig.GetQueryable(httpContext.RequestServices);
 
+            var ignoreQueryOptions = _metadata.ODataQueryOptions.IgnoreQueryOptions;
             var odataQueryContext = new ODataQueryContext(feature.Model, typeof(TSource), feature.Path);
             var options = new ODataQueryOptions<TSource>(odataQueryContext, httpContext.Request);
 

@@ -25,6 +25,10 @@ public abstract class MetadataAction
 
     protected bool HasResponseData => ResponseType != typeof(Result);
 
+    public Type? ImplementationType { set; get; }
+
+    public Type? InterfaceType { set; get; }
+
     protected void ResolveRequestResponseTypes()
     {
         var args = ImplementedInterface.GetGenericArguments();

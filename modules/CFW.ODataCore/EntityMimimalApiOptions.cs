@@ -7,6 +7,8 @@ namespace CFW.ODataCore;
 
 public class EntityMimimalApiOptions
 {
+    public string DefaultRoutePrefix { get; set; } = Constants.DefaultODataRoutePrefix;
+
     internal Type DefaultDbContext { get; set; } = default!;
 
     internal ServiceLifetime DbServiceLifetime { get; set; } = ServiceLifetime.Scoped;

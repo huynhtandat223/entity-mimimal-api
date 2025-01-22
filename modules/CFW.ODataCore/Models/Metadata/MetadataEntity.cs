@@ -1,14 +1,17 @@
 ﻿using CFW.ODataCore.Attributes;
-using CFW.ODataCore.DefaultHandlers;
-using CFW.ODataCore.Intefaces;
-using CFW.ODataCore.RouteMappers;
 using Microsoft.AspNetCore.OData.Abstracts;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
 
 namespace CFW.ODataCore.Models.Metadata;
+
+public record EntityEndpointKey
+{
+    public required string Name { get; init; }
+
+    public required Type SourceType { get; init; }
+}
 
 public class MetadataEntity
 {
@@ -27,8 +30,6 @@ public class MetadataEntity
     public IList<MetadataEntityAction> Operations { get; } = new List<MetadataEntityAction>();
 
     public int NestedLevel { get; set; } = 1;
-
-    public required Type? ConfigurationType { get; init; }
 
     private static object _lockToken = new();
     private IODataFeature? _cachedFeature;
@@ -156,65 +157,6 @@ public class MetadataEntity
         return nestedEntityTypes;
     }
 
-    internal void AddServices(IServiceCollection services)
-    {
-        foreach (var method in Methods)
-        {
-            if (method == ApiMethod.Query)
-            {
-                var getByKeyRouteMapperType = typeof(EntityQueryRouteMapper<>)
-                    .MakeGenericType(SourceType);
-                services.AddKeyedSingleton(this
-                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, getByKeyRouteMapperType, k));
-            }
-
-            if (method == ApiMethod.GetByKey)
-            {
-                var getByKeyRouteMapperType = typeof(EntityGetByKeyRouteMapper<>)
-                    .MakeGenericType(SourceType);
-                services.AddKeyedSingleton(this
-                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, getByKeyRouteMapperType, k));
-            }
-
-            if (method == ApiMethod.Patch)
-            {
-                var mapperType = typeof(EntityPatchRouteMapper<>)
-                    .MakeGenericType(SourceType);
-                services.AddKeyedSingleton(this
-                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, mapperType, k));
-            }
-
-            if (method == ApiMethod.Delete)
-            {
-                var mapperType = typeof(EntityPatchRouteMapper<>)
-                    .MakeGenericType(SourceType);
-                services.AddKeyedSingleton(this
-                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, mapperType, k));
-            }
-
-            if (method == ApiMethod.Post)
-            {
-                //register entity creation handler
-                var serviceType = typeof(IEntityCreationHandler<>).MakeGenericType(SourceType);
-                var implementationType = typeof(EntityCreationHandler<>).MakeGenericType(SourceType);
-
-                var customImplemenationAttribute = HandlerAttributes
-                    .SingleOrDefault(x => x.InterfaceTypes!.Contains(serviceType));
-                if (customImplemenationAttribute is not null)
-                {
-                    implementationType = customImplemenationAttribute.TargetType!;
-                }
-                services.TryAddScoped(serviceType, implementationType);
-
-                //register entity creation route mapper
-                var getByKeyRouteMapperType = typeof(EntityCreationRouteMapper<>)
-                    .MakeGenericType(SourceType);
-                services.AddKeyedSingleton(this
-                    , (s, k) => (IRouteMapper)ActivatorUtilities.CreateInstance(s, getByKeyRouteMapperType));
-            }
-        }
-
-    }
 
     internal EntityEndpoint<TEntity> GetOrCreateEndpointConfiguration<TEntity>(IServiceProvider serviceProvider)
         where TEntity : class
@@ -227,14 +169,11 @@ public class MetadataEntity
             InitSourceMetadata(serviceProvider);
         }
 
-        EntityEndpoint<TEntity>? entityEndpoint = null;
-        if (ConfigurationType is not null)
-        {
-            var customEntityEndpoint = ActivatorUtilities
-                .CreateInstance(serviceProvider, ConfigurationType) as EntityEndpoint<TEntity>;
-            entityEndpoint = customEntityEndpoint!;
-        }
-        else
+        var entityEndpoint = serviceProvider
+            .GetKeyedService<EntityEndpoint<TEntity>>(Name);
+
+        //TODO: remove entity endpoint creation
+        if (entityEndpoint is null)
         {
             entityEndpoint = new EntityEndpoint<TEntity>();
         }

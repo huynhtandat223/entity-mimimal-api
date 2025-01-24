@@ -18,7 +18,7 @@ public class EntityDeleteRouteMapper<TSource> : IRouteMapper
             metadata.InitSourceMetadata(scope.ServiceProvider);
         }
 
-        var internalRouteMapperType = typeof(EntityPatchRouteMapper<,>)
+        var internalRouteMapperType = typeof(EntityDeleteRouteMapper<,>)
             .MakeGenericType(typeof(TSource), metadata.KeyProperty!.PropertyInfo!.PropertyType);
         _internalRouteMapper = (IRouteMapper)Activator.CreateInstance(internalRouteMapperType, metadata)!;
     }
@@ -44,7 +44,7 @@ public class EntityDeleteRouteMapper<TSource, TKey> : IRouteMapper
         var ignoreQueryOptions = _metadata.ODataQueryOptions.IgnoreQueryOptions;
         var keyPattern = this.GetKeyPattern<TKey>();
 
-        routeGroupBuilder.MapPatch(keyPattern, async (TKey key
+        routeGroupBuilder.MapDelete(keyPattern, async (TKey key
             , [FromServices] IServiceProvider serviceProvider
             , [FromServices] IEntityDeletionHandler<TSource, TKey> handler
             , CancellationToken cancellationToken) =>

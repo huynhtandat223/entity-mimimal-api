@@ -31,7 +31,7 @@ public class EntityQueryDisableQueryOptionsAsEntityConfigTests : BaseTests, IAss
                         foreach (var entityMetadata in container.MetadataEntities)
                         {
                             if (entityMetadata.SourceType == dbModelType)
-                                entityMetadata.ODataQueryOptions.InternalAllowedQueryOptions = allowedQueryOptions;
+                                entityMetadata.ODataQueryOptions.AllowedQueryOptions = allowedQueryOptions;
                         }
                     }
 

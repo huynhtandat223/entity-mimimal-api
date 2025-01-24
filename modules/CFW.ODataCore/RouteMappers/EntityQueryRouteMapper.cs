@@ -1,25 +1,34 @@
 ﻿using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Models.Metadata;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
+using Microsoft.Extensions.Options;
 
 namespace CFW.ODataCore.RouteMappers;
 
 public class EntityQueryRouteMapper<TSource> : IRouteMapper
-    where TSource : class
+where TSource : class
 {
     private readonly MetadataEntity _metadata;
+    private readonly IServiceProvider serviceProvider;
+    private readonly ODataOptions _oDataOptions;
 
-    public EntityQueryRouteMapper(MetadataEntity metadata, IServiceScopeFactory serviceScopeFactory)
+    public EntityQueryRouteMapper(MetadataEntity metadata
+        , IServiceProvider serviceProvider
+        , IOptions<ODataOptions> oDataOptions)
     {
         _metadata = metadata;
+        this.serviceProvider = serviceProvider;
+        _oDataOptions = oDataOptions.Value;
     }
 
     public Task MapRoutes(RouteGroupBuilder routeGroupBuilder)
     {
+        var endpointConfig = _metadata.GetOrCreateEndpointConfiguration<TSource>(serviceProvider);
 
-        routeGroupBuilder.MapGet($"/", async (HttpContext httpContext
+        routeGroupBuilder.MapGet("/", async (HttpContext httpContext
             , ODataOutputFormatter formatter
             , CancellationToken cancellationToken) =>
         {
@@ -44,9 +53,25 @@ public class EntityQueryRouteMapper<TSource> : IRouteMapper
             };
 
             await formatter.WriteAsync(formatterContext);
-        }).Produces<TSource>();
+
+
+        }).AddODataMetadata<TSource>(_metadata, _oDataOptions, endpointConfig);
 
         return Task.CompletedTask;
+    }
+}
+
+public class CustomParameterMetadata
+{
+    public string Name { get; }
+    public string Description { get; }
+    public bool Required { get; }
+
+    public CustomParameterMetadata(string name, string description, bool required)
+    {
+        Name = name;
+        Description = description;
+        Required = required;
     }
 }
 

@@ -104,34 +104,37 @@ public class MetadataEntity
             if (KeyProperty is not null)
                 return;
 
-            using var scope = serviceProvider.CreateScope();
-            var dbContextProvider = scope.ServiceProvider.GetRequiredService<IDbContextProvider>();
-            var dbContext = dbContextProvider.GetDbContext();
+            if (EFCoreEntityType is null)
+            {
+                using var scope = serviceProvider.CreateScope();
+                var dbContextProvider = scope.ServiceProvider.GetRequiredService<IDbContextProvider>();
+                var dbContext = dbContextProvider.GetDbContext();
 
-            var entityType = dbContext.Model.FindEntityType(SourceType);
-            if (entityType is null)
-                throw new InvalidOperationException($"Entity type {SourceType} not found in DbContext");
+                var entityType = dbContext.Model.FindEntityType(SourceType);
+                if (entityType is null)
+                    throw new InvalidOperationException($"Entity type {SourceType} not found in DbContext");
 
-            EFCoreEntityType = entityType;
+                EFCoreEntityType = entityType;
+            }
 
-            var keyProperty = entityType.FindPrimaryKey();
+
+            var keyProperty = EFCoreEntityType.FindPrimaryKey();
             if (keyProperty is null)
                 throw new InvalidOperationException($"Primary key not found for {SourceType}");
 
             KeyProperty = keyProperty.Properties.Single();
 
-            var nestedEntityTypes = FindNestedEntityTypes(entityType, dbContext.Model, NestedLevel);
+            var nestedEntityTypes = FindNestedEntityTypes(EFCoreEntityType, NestedLevel);
 
             nestedEntityTypes.Add(EFCoreEntityType);
             SupportEntities = nestedEntityTypes;
         }
     }
 
-    public IEnumerable<IEntityType> SupportEntities { get; private set; } = new List<IEntityType>();
+    internal IEnumerable<IEntityType> SupportEntities { get; private set; } = new List<IEntityType>();
 
     private List<IEntityType> FindNestedEntityTypes(
     IEntityType entityType,
-    IModel model,
     int nestingLevel,
     int currentLevel = 0)
     {
@@ -150,7 +153,7 @@ public class MetadataEntity
 
                 // Recursively find nested types
                 nestedEntityTypes.AddRange(
-                    FindNestedEntityTypes(targetEntityType, model, nestingLevel, currentLevel + 1));
+                    FindNestedEntityTypes(targetEntityType, nestingLevel, currentLevel + 1));
             }
         }
 

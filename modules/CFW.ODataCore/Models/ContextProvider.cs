@@ -2,11 +2,13 @@
 
 namespace CFW.ODataCore.Models;
 
+[Obsolete("Use TDBContext directly")]
 public interface IDbContextProvider
 {
     DbContext GetDbContext();
 }
 
+[Obsolete("Use TDBContext directly")]
 public class ContextProvider<TDbContext> : IDbContextProvider
     where TDbContext : DbContext
 {

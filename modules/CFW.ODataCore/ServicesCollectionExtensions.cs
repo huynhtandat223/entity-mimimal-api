@@ -61,12 +61,11 @@ public static class ServicesCollectionExtensions
 
         foreach (var entityConfigInfo in entityConfigInfoes)
         {
-            var interfaceType = entityConfigInfo.TargetType.GetInterfaces()
-                .Single(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(EntityEndpoint<>));
+            var baseEndpointConfigType = entityConfigInfo.TargetType.BaseType!;
 
             var attribute = entityConfigInfo.Attributes.Single();
 
-            services.TryAddKeyedSingleton(interfaceType, attribute.Name, entityConfigInfo.TargetType);
+            services.TryAddKeyedSingleton(baseEndpointConfigType, attribute.Name, entityConfigInfo.TargetType);
         }
 
         return services;
@@ -79,12 +78,60 @@ public static class ServicesCollectionExtensions
         //resolve all metadata containers
         var sanitizedRoutePrefix = StringUtils.SanitizeRoute(minimalApiOptions.DefaultRoutePrefix);
         var containerFactory = minimalApiOptions.MetadataContainerFactory;
-        var containers = containerFactory.CreateMetadataContainers(sanitizedRoutePrefix, minimalApiOptions);
-        var dbProvider = app.Services.GetRequiredService<IDbContextProvider>();
+        var containers = containerFactory
+            .CreateMetadataContainers(sanitizedRoutePrefix, minimalApiOptions)
+            .ToList();
+
+        using var scope = app.Services.CreateScope();
+        var dbProvider = scope.ServiceProvider.GetRequiredService<IDbContextProvider>();
         var db = dbProvider.GetDbContext();
 
         var odataOptions = app.Services.GetRequiredService<IOptions<ODataOptions>>().Value;
         var defaultModel = new ODataConventionModelBuilder().GetEdmModel();
+
+
+        if (minimalApiOptions.DbContextOptions is not null
+            && minimalApiOptions.DbContextOptions.AutoGenerateEndpoints is not null)
+        {
+            var autoGenerationOptions = minimalApiOptions.DbContextOptions.AutoGenerateEndpoints;
+
+            var routePrefix = autoGenerationOptions.RoutePrefix ?? minimalApiOptions.DefaultRoutePrefix;
+            var sanitizedAutoRoutePrefix = StringUtils.SanitizeRoute(routePrefix);
+            var routeNameFormater = autoGenerationOptions.RouteNameFormatter;
+
+            var defaultQueryOptions = minimalApiOptions.DbContextOptions.AutoGenerateEndpoints.QueryOptions;
+            var nestedLevel = minimalApiOptions.DbContextOptions.AutoGenerateEndpoints.NestedLevel;
+
+            var container = containers.SingleOrDefault(x => x.RoutePrefix == sanitizedAutoRoutePrefix);
+            if (container is null)
+            {
+                container = new MetadataContainer(sanitizedAutoRoutePrefix, minimalApiOptions);
+                containers.Add(container);
+            }
+
+            var buildedClrTypes = containers.SelectMany(x => x.MetadataEntities.Select(y => y.SourceType)).ToList();
+            var entityTypes = db.Model.GetEntityTypes()
+                .Where(x => x.FindPrimaryKey() is not null
+                    && x.FindPrimaryKey()!.Properties.Count == 1) //only support single key entity
+                .Where(x => x.ClrType is not null && !buildedClrTypes.Contains(x.ClrType))
+                .ToList();
+
+            foreach (var entityType in entityTypes)
+            {
+                var metadata = new MetadataEntity
+                {
+                    Container = container,
+                    SourceType = entityType.ClrType!,
+                    Name = routeNameFormater(entityType),
+                    Methods = [ApiMethod.Query, ApiMethod.GetByKey, ApiMethod.Patch, ApiMethod.Delete, ApiMethod.Post],
+                    EFCoreEntityType = entityType,
+                    HandlerAttributes = Array.Empty<EntityHandlerAttribute>(),
+                    ODataQueryOptions = defaultQueryOptions!,
+                    NestedLevel = nestedLevel,
+                };
+                container.MetadataEntities.Add(metadata);
+            }
+        }
 
         foreach (var container in containers)
         {

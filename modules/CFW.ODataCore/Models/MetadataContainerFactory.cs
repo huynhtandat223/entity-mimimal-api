@@ -72,6 +72,14 @@ public class MetadataContainerFactory : IAssemblyResolver
 
                 //find entity type
                 var sourceType = key.Key.TargetType!;
+
+                if (sourceType.BaseType is not null
+                    && sourceType.BaseType.IsGenericType
+                    && sourceType.BaseType.GetGenericTypeDefinition() == typeof(EntityEndpoint<>))
+                {
+                    sourceType = sourceType.BaseType.GetGenericArguments().First();
+                }
+
                 var handlerTypes = handlerAttributes
                     .Where(x => x.EntityType == sourceType && (x.Name.IsNullOrWhiteSpace() || x.Name == endpoint))
                     .ToArray();
@@ -83,7 +91,7 @@ public class MetadataContainerFactory : IAssemblyResolver
                     Methods = key.Select(x => x.Method).ToArray(),
                     SourceType = sourceType,
                     Container = metadataContainer,
-                    ODataQueryOptions = new ODataQueryOptions { InternalAllowedQueryOptions = allowedQueryOptions }
+                    ODataQueryOptions = new ODataQueryOptions { AllowedQueryOptions = allowedQueryOptions }
                 };
                 metadataContainer.MetadataEntities.Add(metadataEntity);
             }

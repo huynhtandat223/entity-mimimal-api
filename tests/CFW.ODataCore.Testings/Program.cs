@@ -36,7 +36,11 @@ if (!isTesting)
         .UseDefaultDbContext<TestingDbContext>());
 
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(o =>
+    {
+        //<see cref="https://stackoverflow.com/questions/61881770/invalidoperationexception-cant-use-schemaid-the-same-schemaid-is-already-us" >
+        o.CustomSchemaIds(type => type.FullName);
+    });
 }
 
 //Authentication
@@ -47,8 +51,9 @@ builder.Services.AddIdentityApiEndpoints<IdentityUser>()
 
 var app = builder.Build();
 
-app.MapIdentityApi<IdentityUser>();
 app.UseAuthorization();
+
+app.MapIdentityApi<IdentityUser>();
 
 
 if (!isTesting)

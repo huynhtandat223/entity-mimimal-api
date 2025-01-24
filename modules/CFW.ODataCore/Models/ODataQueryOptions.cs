@@ -4,9 +4,9 @@ namespace CFW.ODataCore.Models;
 
 public class ODataQueryOptions
 {
-    public required AllowedQueryOptions? InternalAllowedQueryOptions { get; set; }
+    public required AllowedQueryOptions? AllowedQueryOptions { get; set; }
 
-    public AllowedQueryOptions IgnoreQueryOptions { get; private set; }
+    internal AllowedQueryOptions IgnoreQueryOptions { get; private set; }
 
     public void SetIgnoreQueryOptions(DefaultQueryConfigurations queryConfigurations
         , EntityEndpoint entityEndpoint)
@@ -17,39 +17,39 @@ public class ODataQueryOptions
             return;
         }
 
-        if (InternalAllowedQueryOptions is not null)
+        if (AllowedQueryOptions is not null)
         {
-            IgnoreQueryOptions = ~InternalAllowedQueryOptions.Value;
+            IgnoreQueryOptions = ~AllowedQueryOptions.Value;
             return;
         }
 
-        IgnoreQueryOptions = AllowedQueryOptions.None;
+        IgnoreQueryOptions = Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.None;
 
         // Start with "Allow all" bitmask
-        var allowedQueryOptions = AllowedQueryOptions.All;
+        var allowedQueryOptions = Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.All;
 
         // Disable specific query options based on global configurations
         if (!queryConfigurations.EnableCount)
-            allowedQueryOptions &= ~AllowedQueryOptions.Count;
+            allowedQueryOptions &= ~Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.Count;
 
         if (!queryConfigurations.EnableExpand)
-            allowedQueryOptions &= ~AllowedQueryOptions.Expand;
+            allowedQueryOptions &= ~Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.Expand;
 
         if (!queryConfigurations.EnableFilter)
-            allowedQueryOptions &= ~AllowedQueryOptions.Filter;
+            allowedQueryOptions &= ~Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.Filter;
 
         if (!queryConfigurations.EnableOrderBy)
-            allowedQueryOptions &= ~AllowedQueryOptions.OrderBy;
+            allowedQueryOptions &= ~Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.OrderBy;
 
         if (!queryConfigurations.EnableSelect)
-            allowedQueryOptions &= ~AllowedQueryOptions.Select;
+            allowedQueryOptions &= ~Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.Select;
 
         if (!queryConfigurations.EnableSkipToken)
-            allowedQueryOptions &= ~AllowedQueryOptions.SkipToken;
+            allowedQueryOptions &= ~Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.SkipToken;
 
         if (queryConfigurations.MaxTop is not null)
             // Assuming MaxTop being set means Top is allowed, else it's not
-            allowedQueryOptions &= ~AllowedQueryOptions.Top;
+            allowedQueryOptions &= ~Microsoft.AspNetCore.OData.Query.AllowedQueryOptions.Top;
 
         IgnoreQueryOptions = ~allowedQueryOptions;
     }

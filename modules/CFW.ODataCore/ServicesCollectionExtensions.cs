@@ -15,6 +15,7 @@ using System.Text;
 
 namespace CFW.ODataCore;
 
+
 public static class ServicesCollectionExtensions
 {
     /// <summary>
@@ -240,7 +241,7 @@ public static class ServicesCollectionExtensions
                 var routeMapperType = typeof(EntityCreationRouteMapper<>)
                     .MakeGenericType(metadataEntity.SourceType);
                 var routeMapper = (IRouteMapper)ActivatorUtilities
-                    .CreateInstance(serviceProvider, routeMapperType);
+                    .CreateInstance(serviceProvider, routeMapperType, metadataEntity);
 
                 routeMapper.MapRoutes(entityRoute);
             }

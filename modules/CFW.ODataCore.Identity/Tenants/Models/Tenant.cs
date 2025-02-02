@@ -11,5 +11,14 @@ public class Tenant : IEntity<Guid>
 
     public string? DisplayName { get; set; }
 
+    public TenantType Type { get; set; }
+
     public ICollection<User>? Users { get; set; }
+}
+
+public enum TenantType : byte
+{
+    Organization = 0,
+    Personal = 1,
+    System = 2
 }

@@ -35,6 +35,11 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
         return converter!;
     }
 
+    public MetadataEntityProperty FindMetadata()
+    {
+        return FindMetadataProperty(typeof(TEntity));
+    }
+
     private MetadataEntityProperty FindMetadataProperty(Type typeToConvert)
     {
         var entityType = _metadata!.SupportEntities.FirstOrDefault(x => x.ClrType == typeToConvert);
@@ -117,7 +122,7 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
         var db = dbContextProvider.GetDbContext();
         var entity = delta.Instance!;
 
-        var entry = db.Add(entity);
+        var entry = db.Set<TEntity>().Add(entity);
 
         await ProcessChangedNavigationPropertiesRecursive(delta.ChangedProperties!, entry, cancellationToken);
 

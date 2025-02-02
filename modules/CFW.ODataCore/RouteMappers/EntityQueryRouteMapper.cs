@@ -55,7 +55,7 @@ where TSource : class
             await formatter.WriteAsync(formatterContext);
 
 
-        }).AddODataMetadata<TSource>(_metadata, _oDataOptions, endpointConfig);
+        }).AddODataMetadata(_metadata, _oDataOptions, endpointConfig);
 
         return Task.CompletedTask;
     }

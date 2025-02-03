@@ -67,7 +67,7 @@ builder.Services.AddCors(options =>
 //Authentication
 builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<User>()
-    .AddRoles<IdentityRole<Guid>>()
+    .AddRoles<TenantRole>()
     .AddEntityFrameworkStores<CoreIdentityDbContext>();
 
 var app = builder.Build();
@@ -93,9 +93,12 @@ if (db is not null && !db.Database.CanConnect())
     var supperAdminName = "admin@gmail.com";
     var supperAdminRole = "SuperAdmin";
     var supperAdminPassword = "123!@#abcABC";
+    var systemTenant = new Tenant { Name = "System", Type = TenantType.System };
+    db.Set<Tenant>().Add(systemTenant);
+    await db.SaveChangesAsync();
 
     using var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-    using var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    using var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TenantRole>>();
 
     var supperAdminUser = new User { UserName = supperAdminName, Email = supperAdminName };
     var result = await userManager.CreateAsync(supperAdminUser, supperAdminPassword);
@@ -104,7 +107,7 @@ if (db is not null && !db.Database.CanConnect())
         throw new InvalidOperationException("Test data invalid. User creation failed.");
     }
 
-    var role = await roleManager.CreateAsync(new IdentityRole<Guid>(supperAdminRole));
+    var role = await roleManager.CreateAsync(new TenantRole { Name = supperAdminRole, TenantId = systemTenant.Id });
     if (!role.Succeeded)
     {
         throw new InvalidOperationException("Test data invalid. Role creation failed.");

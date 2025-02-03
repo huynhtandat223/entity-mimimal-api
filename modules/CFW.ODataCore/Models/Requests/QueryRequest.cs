@@ -16,7 +16,10 @@ public class QueryRequest<TRequest>
         var result = new QueryRequest<TRequest>();
 
         if (!request.QueryString.HasValue)
+        {
+            result.QueryModel = Activator.CreateInstance<TRequest>();
             return new ValueTask<QueryRequest<TRequest>>(result);
+        }
 
         var dict = HttpUtility.ParseQueryString(request.QueryString.Value);
         string json = JsonSerializer.Serialize(dict.Cast<string>().ToDictionary(k => k, v => dict[v]));

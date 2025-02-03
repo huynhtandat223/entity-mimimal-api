@@ -27,7 +27,7 @@ public class CategoriesPingPongWithKey
             {
                 RequestId = request.RequestId,
                 Name = request.Name
-            }.Success();
+            }.Ok();
 
             return Task.FromResult(result);
         }

@@ -9,7 +9,7 @@ namespace CFW.ODataCore.RouteMappers;
 
 
 public class EntityCreationRouteMapper<TSource> : IRouteMapper
-where TSource : class, new()
+where TSource : class
 {
     private readonly MetadataEntity _metadataEntity;
     private readonly EntityEndpoint<TSource> _entityConfig;

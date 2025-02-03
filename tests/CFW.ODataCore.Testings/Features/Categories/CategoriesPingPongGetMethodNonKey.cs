@@ -27,7 +27,7 @@ public class CategoriesPingPongGetMethodNonKey
             {
                 Id = request.Id,
                 Name = request.Name
-            }.Success();
+            }.Ok();
 
             return Task.FromResult(result);
         }

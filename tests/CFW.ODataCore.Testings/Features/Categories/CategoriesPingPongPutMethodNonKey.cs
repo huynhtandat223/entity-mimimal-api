@@ -29,7 +29,7 @@ public class CategoriesPingPongPutMethodNonKey
             {
                 Id = request.Id,
                 Name = request.Name
-            }.Success();
+            }.Ok();
 
             return Task.FromResult(result);
         }

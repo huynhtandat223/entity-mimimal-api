@@ -13,7 +13,7 @@ public class Tenant : IEntity<Guid>
 
     public TenantType Type { get; set; }
 
-    public ICollection<User>? Users { get; set; }
+    public ICollection<ApplicationUser>? Users { get; set; }
 }
 
 public enum TenantType : byte

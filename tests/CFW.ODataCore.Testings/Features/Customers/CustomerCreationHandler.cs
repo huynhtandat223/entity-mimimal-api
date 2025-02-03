@@ -8,7 +8,7 @@ public class CustomerCreationHandler : IEntityCreationHandler<Customer>
 {
     public Task<Result> Handle(CreationCommand<Customer> command, CancellationToken cancellationToken)
     {
-        var result = command.Delta.Instance.Success() as Result;
+        var result = command.Delta.Instance.Ok() as Result;
         return Task.FromResult(result);
     }
 }

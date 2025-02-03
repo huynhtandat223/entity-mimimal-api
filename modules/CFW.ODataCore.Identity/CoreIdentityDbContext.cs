@@ -4,9 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CFW.ODataCore.Identity;
 
-public class CoreIdentityDbContext : IdentityDbContext<User, TenantRole, Guid>
+public class CoreIdentityDbContext : IdentityDbContext<ApplicationUser, TenantRole, Guid>
 {
     public CoreIdentityDbContext(DbContextOptions<CoreIdentityDbContext> options) : base(options)
     {
+    }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
     }
 }

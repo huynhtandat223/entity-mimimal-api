@@ -66,7 +66,7 @@ builder.Services.AddCors(options =>
 
 //Authentication
 builder.Services.AddAuthorization();
-builder.Services.AddIdentityApiEndpoints<User>()
+builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddRoles<TenantRole>()
     .AddEntityFrameworkStores<CoreIdentityDbContext>();
 
@@ -75,7 +75,7 @@ var app = builder.Build();
 app.UseCors("AllowSpecificOrigins");
 
 app.UseAuthorization();
-app.MapIdentityApi<User>();
+app.MapIdentityApi<ApplicationUser>();
 
 //use swagger
 app.UseSwagger();
@@ -97,27 +97,24 @@ if (db is not null && !db.Database.CanConnect())
     db.Set<Tenant>().Add(systemTenant);
     await db.SaveChangesAsync();
 
-    using var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    using var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     using var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TenantRole>>();
 
-    var supperAdminUser = new User { UserName = supperAdminName, Email = supperAdminName };
+    var supperAdminUser = new ApplicationUser { UserName = supperAdminName, Email = supperAdminName };
     var result = await userManager.CreateAsync(supperAdminUser, supperAdminPassword);
     if (!result.Succeeded)
     {
         throw new InvalidOperationException("Test data invalid. User creation failed.");
     }
 
-    var role = await roleManager.CreateAsync(new TenantRole { Name = supperAdminRole, TenantId = systemTenant.Id });
+    var role = await roleManager.CreateAsync(new TenantRole(systemTenant.Id, supperAdminRole));
     if (!role.Succeeded)
     {
         throw new InvalidOperationException("Test data invalid. Role creation failed.");
     }
 
-    var addRoleResult = await userManager.AddToRoleAsync(supperAdminUser, supperAdminRole);
-    if (!addRoleResult.Succeeded)
-    {
-        throw new InvalidOperationException("Test data invalid. Add role to user failed.");
-    }
+    supperAdminUser.TenantRoles.Add(new TenantRole(systemTenant.Id, supperAdminRole));
+    await db.SaveChangesAsync();
 }
 
 

@@ -135,7 +135,10 @@ public class MetadataContainerFactory : IAssemblyResolver
         {
             var container = containers.FirstOrDefault(x => x.RoutePrefix == containerGroup.Key);
             if (container is null)
+            {
                 container = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
+                containers.Add(container);
+            }
 
             var entityOperations = containerGroup
                 .GroupBy(x => new { x.EntityName, x.BoundEntityType, x.TargetType, x.ActionName });
@@ -204,7 +207,10 @@ public class MetadataContainerFactory : IAssemblyResolver
         {
             var container = containers.FirstOrDefault(x => x.RoutePrefix == containerGroup.Key);
             if (container is null)
+            {
                 container = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
+                containers.Add(container);
+            }
 
             var unboundOperations = containerGroup
                 .GroupBy(x => new { x.TargetType, x.ActionName });

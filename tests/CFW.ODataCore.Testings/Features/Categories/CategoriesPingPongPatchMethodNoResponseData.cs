@@ -19,7 +19,7 @@ public class CategoriesPingPongPatchMethodNoResponseData
     {
         public Task<Result> Handle(RequestPing request, CancellationToken cancellationToken)
         {
-            var result = this.Success() as Result;
+            var result = this.Ok() as Result;
             return Task.FromResult(result);
         }
     }

@@ -158,7 +158,7 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
             return dbEntity.Failed("Failed to create entity");
         }
 
-        return dbEntity.Success();
+        return dbEntity.Ok();
     }
 
     private async Task ProcessChangedNavigationPropertiesRecursive(
@@ -217,6 +217,6 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
         {
             return dbEntity.Failed("Failed to delete entity");
         }
-        return dbEntity.Success();
+        return dbEntity.Ok();
     }
 }

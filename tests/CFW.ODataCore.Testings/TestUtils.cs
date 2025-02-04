@@ -26,6 +26,7 @@ public static class TestUtils
                 .Where(x => x.RoutePrefix == defaultRoutePrefix && x.Methods.Length == defaultMethods.Length)
                 .Select(x => $"{x.RoutePrefix}/{x.Name}")
                 .First()
+
             : odataRouting
                 .Where(x => x.RoutePrefix == defaultRoutePrefix && !x.Methods.Contains(excludedMethod.Value))
                 .Select(x => $"{x.RoutePrefix}/{x.Name}")

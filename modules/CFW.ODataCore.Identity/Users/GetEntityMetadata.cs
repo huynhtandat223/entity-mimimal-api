@@ -2,21 +2,19 @@
 using CFW.ODataCore.Attributes;
 using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Models;
+using CFW.ODataCore.Models.Metadata;
 
 namespace CFW.ODataCore.Identity.Users;
 
 public class GetEntityMetadata
 {
-    public record Request { }
+    public class Request : IRequestMetadata
+    {
+        public MetadataAction Metadata { get; set; } = default!;
+    }
 
     public class Response
     {
-        public IEnumerable<ResponseContainer> Containers { get; set; } = Array.Empty<ResponseContainer>();
-    }
-
-    public class ResponseContainer
-    {
-        public string RoutePrefix { get; set; } = string.Empty;
         public IEnumerable<ResponseEntity> MetadataEntities { get; set; } = Array.Empty<ResponseEntity>();
     }
 
@@ -30,26 +28,28 @@ public class GetEntityMetadata
     [UnboundAction("entityMetadata", ActionMethod = ApiMethod.Get)]
     public class Handler : IOperationHandler<Request, Response>
     {
-        private readonly EntityMimimalApiOptions _entityMimimalApiOptions;
-        public Handler(EntityMimimalApiOptions entityMimimalApiOptions)
+        private readonly IEnumerable<EntityMimimalApiOptions> _entityMimimalApiOptions;
+
+        public Handler(IEnumerable<EntityMimimalApiOptions> entityMimimalApiOptions)
         {
             _entityMimimalApiOptions = entityMimimalApiOptions;
         }
 
-        public async Task<Result<Response>> Handle(Request _, CancellationToken cancellationToken)
+        public async Task<Result<Response>> Handle(Request request, CancellationToken cancellationToken)
         {
             var result = new Response();
+            var options = _entityMimimalApiOptions
+                .SingleOrDefault(x => x.DefaultRoutePrefix == request.Metadata.RoutePrefix);
 
-            result.Containers = _entityMimimalApiOptions.Containters
-                .Select(x => new ResponseContainer
+            if (options is null)
+                return result.Notfound($"Option with route prefix {request.Metadata.RoutePrefix} not found");
+
+            var container = options.MetadataContainer;
+            result.MetadataEntities = container.MetadataEntities
+                .Select(x => new ResponseEntity
                 {
-                    RoutePrefix = x.RoutePrefix,
-                    MetadataEntities = x.MetadataEntities
-                        .Select(y => new ResponseEntity
-                        {
-                            Name = y.Name,
-                            Methods = y.Methods
-                        })
+                    Name = x.Name,
+                    Methods = x.Methods
                 });
 
             return result.Ok();

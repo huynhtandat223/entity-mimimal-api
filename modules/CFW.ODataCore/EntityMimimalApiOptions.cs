@@ -74,8 +74,7 @@ public class EntityMimimalApiOptions
 
     internal DbContextSetupOptions? DbContextOptions { get; set; }
 
-    public List<MetadataContainer> Containters { get; internal set; }
-        = new List<MetadataContainer>();
+    public MetadataContainer MetadataContainer { get; internal set; } = default!;
 
     public EntityMimimalApiOptions UseDefaultDbContext<TDbContext>(Action<DbContextSetupOptions<TDbContext>>? generationSetup = null)
         where TDbContext : DbContext

@@ -37,6 +37,11 @@ public static class ActionRouteMapperExtensions
             if (request is null)
                 return Results.BadRequest("Invalid Request");
 
+            if (request is IRequestMetadata metadata)
+            {
+                metadata.Metadata = actionMetadata;
+            }
+
             var handler = (IOperationHandler<TRequest>)ActivatorUtilities
             .CreateInstance(httpContext.RequestServices, actionMetadata.ImplementationType!);
 
@@ -64,6 +69,11 @@ public static class ActionRouteMapperExtensions
             request ??= queryRequest.QueryModel;
             if (request is null)
                 return Results.BadRequest("Invalid Request");
+
+            if (request is IRequestMetadata metadata)
+            {
+                metadata.Metadata = actionMetadata;
+            }
 
             //set key to request
             if (!_setters.TryGetValue(keyProperty.PropertyType, out var setter))
@@ -99,6 +109,11 @@ public static class ActionRouteMapperExtensions
             if (request is null)
                 return Results.BadRequest("Invalid Request");
 
+            if (request is IRequestMetadata metadata)
+            {
+                metadata.Metadata = actionMetadata;
+            }
+
             var handler = (IOperationHandler<TRequest, TResponse>)ActivatorUtilities
                 .CreateInstance(httpContext.RequestServices, actionMetadata.ImplementationType!);
 
@@ -128,6 +143,11 @@ public static class ActionRouteMapperExtensions
             request ??= queryRequest.QueryModel;
             if (request is null)
                 return Results.BadRequest("Invalid Request");
+
+            if (request is IRequestMetadata metadata)
+            {
+                metadata.Metadata = actionMetadata;
+            }
 
             //set key to request
             if (!_setters.TryGetValue(keyProperty.PropertyType, out var setter))

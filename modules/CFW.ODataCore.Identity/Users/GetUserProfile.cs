@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CFW.ODataCore.Identity.Users;
 
-public class UsersGetUserProfile
+public class GetUserProfile
 {
     public record Request { }
 
@@ -28,7 +28,6 @@ public class UsersGetUserProfile
 
         public Guid TenantId { get; set; }
     }
-
 
     [UnboundAction("me", ActionMethod = ApiMethod.Get)]
     public class Handler : IOperationHandler<Request, Response>

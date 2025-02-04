@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.OData.ModelBuilder;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +22,7 @@ builder.Services.AddEntityMinimalApi(o => o
     .ConfigureODataModelBuilder(b => b.EnableLowerCamelCase())
     .ConfigureMinimalApiContainerRouteGroup(containerGroupBuilder =>
     {
-        containerGroupBuilder.RequireAuthorization();
+        //containerGroupBuilder.RequireAuthorization();
     })
     .UseDefaultDbContext<CoreIdentityDbContext>(o =>
     {
@@ -69,6 +70,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddRoles<TenantRole>()
     .AddEntityFrameworkStores<CoreIdentityDbContext>();
+
+//Enum to string
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var app = builder.Build();
 

@@ -1,4 +1,5 @@
 ﻿using CFW.ODataCore.Models;
+using CFW.ODataCore.Models.Metadata;
 using Humanizer;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Query;
@@ -72,6 +73,9 @@ public class EntityMimimalApiOptions
     internal Action<RouteGroupBuilder>? ConfigureContainerRouteGroup { get; set; }
 
     internal DbContextSetupOptions? DbContextOptions { get; set; }
+
+    public List<MetadataContainer> Containters { get; internal set; }
+        = new List<MetadataContainer>();
 
     public EntityMimimalApiOptions UseDefaultDbContext<TDbContext>(Action<DbContextSetupOptions<TDbContext>>? generationSetup = null)
         where TDbContext : DbContext

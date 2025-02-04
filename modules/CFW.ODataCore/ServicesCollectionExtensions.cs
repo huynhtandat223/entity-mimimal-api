@@ -163,6 +163,7 @@ public static class ServicesCollectionExtensions
             container.ODataInternalServiceProvider = odataOptions.RouteComponents[container.RoutePrefix].ServiceProvider;
         }
 
+        minimalApiOptions.Containters = containers;
     }
 
     private static void RegisterEntityComponents(WebApplication app

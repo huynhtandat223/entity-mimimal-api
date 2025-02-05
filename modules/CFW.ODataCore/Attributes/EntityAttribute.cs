@@ -9,6 +9,8 @@ public class EntityAttribute : BaseRoutingAttribute
 {
     internal Type? TargetType { get; set; }
 
+    public Type? DbContextType { get; set; }
+
     public string Name { get; }
 
     public ApiMethod[] Methods { get; set; } = [ApiMethod.GetByKey, ApiMethod.Post, ApiMethod.Put, ApiMethod.Patch, ApiMethod.Delete, ApiMethod.Query];

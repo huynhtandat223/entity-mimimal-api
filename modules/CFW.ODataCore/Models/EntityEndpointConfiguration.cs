@@ -108,10 +108,9 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
 
     internal async Task<IQueryable<TEntity>> GetQueryable(IServiceProvider serviceProvider)
     {
-        var serviceKey = _metadata.Container.RoutePrefix;
-        var dbContextProvider = serviceProvider.GetRequiredKeyedService<IDbContextProvider>(serviceKey);
-        var db = dbContextProvider.GetDbContext();
-        var queryable = db.Set<TEntity>().AsNoTracking();
+        var dbContextType = _metadata!.DbContextType;
+        var db = ActivatorUtilities.CreateInstance(serviceProvider, dbContextType) as DbContext;
+        var queryable = db!.Set<TEntity>().AsNoTracking();
 
         return await Task.FromResult(queryable);
     }
@@ -120,12 +119,11 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
     internal async Task<Result> CreateEntity(EntityDelta<TEntity> delta
         , IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var serviceKey = _metadata.Container.RoutePrefix;
-        var dbContextProvider = serviceProvider.GetRequiredKeyedService<IDbContextProvider>(serviceKey);
-        var db = dbContextProvider.GetDbContext();
+        var dbContextType = _metadata!.DbContextType;
+        var db = ActivatorUtilities.CreateInstance(serviceProvider, dbContextType) as DbContext;
         var entity = delta.Instance!;
 
-        var entry = db.Set<TEntity>().Add(entity);
+        var entry = db!.Set<TEntity>().Add(entity);
 
         await ProcessChangedNavigationPropertiesRecursive(delta.ChangedProperties!, entry, cancellationToken);
 
@@ -142,11 +140,10 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
         , TKey key
         , IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var serviceKey = _metadata.Container.RoutePrefix;
-        var dbContextProvider = serviceProvider.GetRequiredKeyedService<IDbContextProvider>(serviceKey);
-        var db = dbContextProvider.GetDbContext();
+        var dbContextType = _metadata!.DbContextType;
+        var db = ActivatorUtilities.CreateInstance(serviceProvider, dbContextType) as DbContext;
 
-        var dbEntity = await db.FindAsync<TEntity>([key], cancellationToken);
+        var dbEntity = await db!.FindAsync<TEntity>([key], cancellationToken);
         if (dbEntity is null)
         {
             return delta.Notfound();
@@ -208,10 +205,9 @@ public class EntityEndpoint<TEntity> : EntityEndpoint
 
     internal async Task<Result> DeleteEntity<TKey>(TKey? key, IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var serviceKey = _metadata.Container.RoutePrefix;
-        var dbContextProvider = serviceProvider.GetRequiredKeyedService<IDbContextProvider>(serviceKey);
-        var db = dbContextProvider.GetDbContext();
-        var dbEntity = await db.FindAsync<TEntity>(key, cancellationToken);
+        var dbContextType = _metadata!.DbContextType;
+        var db = ActivatorUtilities.CreateInstance(serviceProvider, dbContextType) as DbContext;
+        var dbEntity = await db!.FindAsync<TEntity>(key, cancellationToken);
         if (dbEntity is null)
         {
             return dbEntity.Notfound();

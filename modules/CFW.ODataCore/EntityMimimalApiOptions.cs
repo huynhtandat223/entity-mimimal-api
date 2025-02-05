@@ -58,12 +58,6 @@ public class EntityMimimalApiOptions
 {
     public string DefaultRoutePrefix { get; set; } = Constants.DefaultODataRoutePrefix;
 
-    [Obsolete("Use DbContextSetupOptions instead")]
-    internal Type DefaultDbContext { get; set; } = default!;
-
-    [Obsolete("Use DbContextSetupOptions instead")]
-    internal ServiceLifetime DbServiceLifetime { get; set; } = ServiceLifetime.Scoped;
-
     internal Action<ODataOptions> ODataOptions { get; set; } = (options) => options.EnableQueryFeatures();
 
     internal MetadataContainerFactory MetadataContainerFactory { get; set; } = new MetadataContainerFactory();
@@ -79,9 +73,6 @@ public class EntityMimimalApiOptions
     public EntityMimimalApiOptions UseDefaultDbContext<TDbContext>(Action<DbContextSetupOptions<TDbContext>>? generationSetup = null)
         where TDbContext : DbContext
     {
-        DefaultDbContext = typeof(TDbContext);
-        DbServiceLifetime = ServiceLifetime.Scoped;
-
         var options = new DbContextSetupOptions<TDbContext>();
         generationSetup?.Invoke(options);
 

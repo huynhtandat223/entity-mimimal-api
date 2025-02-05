@@ -1,5 +1,6 @@
 ﻿using CFW.ODataCore.Attributes;
 using Microsoft.AspNetCore.OData.Abstracts;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
@@ -26,6 +27,8 @@ public class MetadataEntity
     public required ODataQueryOptions ODataQueryOptions { get; init; }
 
     public required EntityHandlerAttribute[] HandlerAttributes { get; init; }
+
+    public required Type? DbContextType { get; init; }
 
     public IList<MetadataEntityAction> Operations { get; } = new List<MetadataEntityAction>();
 
@@ -107,8 +110,8 @@ public class MetadataEntity
             if (EFCoreEntityType is null)
             {
                 using var scope = serviceProvider.CreateScope();
-                var dbContextProvider = scope.ServiceProvider.GetRequiredService<IDbContextProvider>();
-                var dbContext = dbContextProvider.GetDbContext();
+
+                var dbContext = (DbContext)ActivatorUtilities.CreateInstance(scope.ServiceProvider, DbContextType);
 
                 var entityType = dbContext.Model.FindEntityType(SourceType);
                 if (entityType is null)

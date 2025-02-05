@@ -6,6 +6,7 @@ using CFW.ODataCore.Models.Metadata;
 using CFW.ODataCore.RouteMappers;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.OData;
@@ -47,13 +48,6 @@ public static class ServicesCollectionExtensions
         services.TryAddScoped(typeof(IEntityPatchHandler<,>), typeof(EntityPatchHandler<,>));
         services.TryAddScoped(typeof(IEntityDeletionHandler<,>), typeof(EntityDeletionHandler<,>));
 
-        //register default db context provider
-        if (coreOptions.DefaultDbContext is not null)
-        {
-            var contextProvider = typeof(ContextProvider<>).MakeGenericType(coreOptions.DefaultDbContext);
-            services.AddKeyedScoped(typeof(IDbContextProvider), coreOptions.DefaultRoutePrefix, contextProvider);
-        }
-
         var entityConfigInfoes = coreOptions.MetadataContainerFactory.CacheType
             .Where(x => x.GetCustomAttributes<EntityAttribute>().Any())
             .Where(x => x.BaseType is not null
@@ -87,20 +81,22 @@ public static class ServicesCollectionExtensions
 
         foreach (var minimalApiOptions in minimalApiOptionsList)
         {
-
             //resolve all metadata containers
             var sanitizedRoutePrefix = StringUtils.SanitizeRoute(minimalApiOptions.DefaultRoutePrefix);
             var containerFactory = minimalApiOptions.MetadataContainerFactory;
             var container = containerFactory
                 .CreateMetadataContainer(minimalApiOptions);
+            var dbContextOptions = minimalApiOptions.DbContextOptions;
+            var dbContextType = dbContextOptions?.DbContextType;
+
+            if (dbContextType is null)
+                throw new InvalidOperationException("DbContextType is required");
 
             using var scope = app.Services.CreateScope();
-            var dbProvider = scope.ServiceProvider.GetRequiredKeyedService<IDbContextProvider>(minimalApiOptions.DefaultRoutePrefix);
-            var db = dbProvider.GetDbContext();
+            var db = (DbContext)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, dbContextType);
 
             var odataOptions = app.Services.GetRequiredService<IOptions<ODataOptions>>().Value;
             var defaultModel = new ODataConventionModelBuilder().GetEdmModel();
-
 
             if (minimalApiOptions.DbContextOptions is not null
                 && minimalApiOptions.DbContextOptions.AutoGenerateEndpoints is not null)
@@ -114,7 +110,6 @@ public static class ServicesCollectionExtensions
                 var defaultQueryOptions = minimalApiOptions.DbContextOptions.AutoGenerateEndpoints.QueryOptions;
                 var nestedLevel = minimalApiOptions.DbContextOptions.AutoGenerateEndpoints.NestedLevel;
 
-
                 var buildedClrTypes = container.MetadataEntities.Select(y => y.SourceType).ToList();
                 var entityTypes = db.Model.GetEntityTypes()
                     .Where(x => x.FindPrimaryKey() is not null
@@ -126,6 +121,7 @@ public static class ServicesCollectionExtensions
                 {
                     var metadata = new MetadataEntity
                     {
+                        DbContextType = dbContextType,
                         Container = container,
                         SourceType = entityType.ClrType!,
                         Name = routeNameFormater(entityType),
@@ -167,7 +163,6 @@ public static class ServicesCollectionExtensions
 
             minimalApiOptions.MetadataContainer = container;
         }
-
     }
 
     private static void RegisterEntityComponents(WebApplication app

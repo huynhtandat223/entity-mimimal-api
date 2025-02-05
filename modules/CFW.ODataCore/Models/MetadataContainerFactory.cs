@@ -134,6 +134,13 @@ public class MetadataContainerFactory : IAssemblyResolver
             if (duplicateMethods.Any())
                 throw new InvalidOperationException($"Duplicate methods {string.Join(",", duplicateMethods)} for entity {key.Key.Name}");
 
+            var dbContextTypes = key.Where(x => x.Attribute.DbContextType is not null)
+                .Select(x => x.Attribute.DbContextType)
+                .ToList();
+            if (dbContextTypes.Count > 1)
+                throw new InvalidOperationException($"Multiple DbContextType {string.Join(",", dbContextTypes)} for entity {key.Key.Name}");
+
+            var dbContextType = dbContextTypes.FirstOrDefault() ?? mimimalApiOptions.DbContextOptions?.DbContextType;
             var endpoint = key.Key.Name;
             var allowedQueryOptions = key.Key.AllowedQueryOptions;
 
@@ -153,6 +160,7 @@ public class MetadataContainerFactory : IAssemblyResolver
 
             var metadataEntity = new MetadataEntity
             {
+                DbContextType = dbContextType,
                 HandlerAttributes = handlerTypes,
                 Name = endpoint,
                 Methods = key.Select(x => x.Method).ToArray(),

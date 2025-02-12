@@ -1,9 +1,15 @@
-﻿using Microsoft.AspNetCore.OData.Deltas;
+﻿//using CFW.ODataCore.Models.Requests;
 
-namespace CFW.ODataCore.Intefaces;
+//namespace CFW.ODataCore.Intefaces;
 
-public interface IEntityPatchHandler<TODataViewModel, TKey>
-    where TODataViewModel : class
-{
-    Task<Result> Handle(TKey key, Delta<TODataViewModel> delta, CancellationToken cancellationToken);
-}
+//public interface IEntityPatchHandler<TEntity, TKey>
+//    where TEntity : class
+//{
+//    Task<Result> Handle(PatchCommand<TEntity, TKey> command, CancellationToken cancellationToken);
+//}
+
+//public interface IEntityDeletionHandler<TEntity, TKey>
+//    where TEntity : class
+//{
+//    Task<Result> Handle(DeletionCommand<TEntity, TKey> command, CancellationToken cancellationToken);
+//}

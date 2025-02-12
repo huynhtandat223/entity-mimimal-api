@@ -1,6 +1,6 @@
 ﻿using CFW.Core.Entities;
 
-namespace CFW.ODataCore.Testings.Models;
+namespace CFW.EntityMinimalApi.Testings.Models;
 
 [Entity("customers")]
 public class Customer : IEntity<int>
@@ -10,4 +10,23 @@ public class Customer : IEntity<int>
     public string? Name { get; set; }
 
     public string? Address { get; set; }
+
+    public ICollection<Order>? Orders { get; set; } = new List<Order>();
+
+    public Address? ShippingAddress { get; set; }
+
+    public Address? BillingAddress { get; set; }
+}
+
+public class Address : IEntity<int>
+{
+    public int Id { get; set; }
+
+    public string? Street { get; set; }
+
+    public string? City { get; set; }
+
+    public string? State { get; set; }
+
+    public string? ZipCode { get; set; }
 }

@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+	  <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>CFW.EntityMinimalApi</PackageId>
+    <Version>1.0.2</Version>
+    <Authors>dat.ht</Authors>
+    <Description>EntityMinimalApi is a lightweight library for creating CRUD APIs using Entity Framework Core, OData, and .NET Minimal APIs. Simplify modern API development with an intuitive and flexible approach.</Description>
+    <PackageTags>CRUD;API;MinimalAPI;EntityFramework;OData;DotNet</PackageTags>
+    <RepositoryUrl>https://github.com/huynhtandat223/entity-mimimal-api</RepositoryUrl>
+    <IsPackable>true</IsPackable>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NoWarn>$(NoWarn);AD0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <!--Show internal members to test project-->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>CFW.EntityMinimalApi.Testings</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <!--Show internal members to test project-->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OData" Version="9.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
+    <PackageReference Include="System.Text.Json" Version="9.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CFW.Core\CFW.Core.csproj" />
+  </ItemGroup>
+
+</Project>

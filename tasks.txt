@@ -1,0 +1,22 @@
+- Implement entites/tenants
+	- Configure ICON in be?????
+
+- FE, BE: authentication, authorization implemenation
+	- Clean up code
+		+ BE: Move to auth lib
+
+- FE: refactor API (axios, query client simplify)
+- BE: query need use both apis: $count and without $count
+- Support json property name diff
+- Register ODataOptions and others service by route prefix, support multi containers => need to testing with second route prefix register.
+- Implement search
+- BE: open api generation.
+- BE: OData default selection, limit only primitive properties
+- Entity group route need to configurable
+- FE Enhancement: Search debound
+- BE test: unbound action has custom route mapper "IActionRouteMapper"
+- BE: remove coreOptions.DefaultDbContext to support multiple DBContext
+- BE Enhancement: Support operation with empty request.
+- BE Enhancement: Seed data improving
+- BE: fix unit test, refactor entity endpoint infra
+- BE: refactor ODataOptions can use multiple route prefix

@@ -1,38 +1,21 @@
-﻿using CFW.ODataCore.Models;
+﻿using CFW.EntityApi.Models;
+using Microsoft.AspNetCore.OData.Query;
 
-namespace CFW.ODataCore.Attributes;
+namespace CFW.EntityApi.Attributes;
 
-/// <summary>
-/// The class marked with this attribute will be used to create an entity set segment.
-/// If entity class: the CRUD operations will be generated base on all.
-/// If handler class: the CRUD operations will be generated base on CRUD interfaces.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-public class EntityAttribute : BaseRoutingAttribute
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+public class EntityAttribute(string? name = null) : BaseRoutingAttribute
 {
-    public string Name { get; }
-
-    public Type? DbType { get; set; }
-
     /// <summary>
-    /// Only effective for viewModel class. Handler class methods resolved by CRUD interfaces.
+    /// If not set, the name will generate from global builder.
     /// </summary>
-    public EntityMethod[] Methods { get; set; } = Array.Empty<EntityMethod>();
+    public string? Name { get; set; } = name;
 
-    public EntityAttribute(string name)
-    {
-        Name = name;
-    }
+    public ApiMethod[]? Methods { get; set; }
 
-    public EntityAttribute(string name, params string[] odataHttpMethods)
-    {
-        Name = name;
-    }
-}
+    public AllowedQueryOptions? QueryOptions { get; set; }
 
-public class BasicProjectorAttribute<TDbModel> : Attribute
-{
-    public BasicProjectorAttribute()
-    {
-    }
+    public AllowedQueryOptions? GetByKeyOptions { get; set; }
+
+    internal Type TargetType { get; set; } = null!;
 }

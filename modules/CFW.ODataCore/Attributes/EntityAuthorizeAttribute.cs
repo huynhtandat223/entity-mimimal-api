@@ -1,10 +1,11 @@
-﻿using CFW.ODataCore.Models;
-using Microsoft.AspNetCore.Authorization;
+﻿using CFW.EntityApi.Models;
 
-namespace CFW.ODataCore.Attributes;
+namespace CFW.EntityApi.Attributes;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public class EntityAuthorizeAttribute : AuthorizeAttribute
+public class EntityAuthorizeAttribute : BaseRoutingAttribute
 {
-    public EntityMethod[] ApplyMethods { get; set; } = Enum.GetValues<EntityMethod>();
+    public ApiMethod[]? ApplyMethods { get; set; }
+
+    public string? Roles { get; set; }
 }

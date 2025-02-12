@@ -1,8 +1,7 @@
 ﻿using CFW.Core.Entities;
 
-namespace CFW.ODataCore.Testings.Models;
+namespace CFW.EntityMinimalApi.Testings.Models;
 
-[Entity("vouchers")]
 public class Voucher : IEntity<string>
 {
     public string Id { get; set; } = string.Empty;

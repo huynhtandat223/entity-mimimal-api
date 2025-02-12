@@ -1,8 +1,13 @@
 ﻿using CFW.Core.Entities;
+using CFW.EntityApi.Models;
 
-namespace CFW.ODataCore.Testings.Models;
+namespace CFW.EntityMinimalApi.Testings.Models;
 
+/// <summary>
+/// Represents a entity has multi endpoints.
+/// </summary>
 [Entity("categories")]
+[Entity("only-post-categories", Methods = [ApiMethod.Post])]
 public class Category : IEntity<Guid>
 {
     public Guid Id { get; set; }

@@ -1,0 +1,26 @@
+﻿using CFW.Core.Entities;
+using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
+
+namespace CFW.EntityApi.TestApi.Models;
+
+[DbEntity<AppDbContext, Product, Guid>]
+public class Product : IEntity<Guid>
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
+    public Category? Category { get; set; } = default!;
+
+    public ProductType ProductType { get; set; }
+}
+
+public enum ProductType
+{
+    Unknown,
+    Physical,
+    Digital,
+    Service,
+}

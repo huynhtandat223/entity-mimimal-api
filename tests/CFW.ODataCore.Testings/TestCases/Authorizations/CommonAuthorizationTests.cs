@@ -1,15 +1,16 @@
 ﻿using CFW.Core.Entities;
-using CFW.ODataCore.Testings.TestCases.Authorizations.Models;
+using CFW.EntityApi.Attributes;
+using CFW.EntityMinimalApi.Testings.Models;
 using FluentAssertions.Common;
 using System.Net;
 using System.Reflection;
 
-namespace CFW.ODataCore.Testings.TestCases.Authorizations;
+namespace CFW.EntityMinimalApi.Testings.TestCases.Authorizations;
 
 public class CommonAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
 {
     public CommonAuthorizationTests(ITestOutputHelper testOutputHelper, AppFactory factory)
-        : base(testOutputHelper, factory)
+        : base(testOutputHelper, factory, types: [typeof(AuthorizeCategory)])
     {
     }
 
@@ -21,15 +22,12 @@ public class CommonAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
         var authorizeAttributes = resourceType
             .GetCustomAttributes<EntityAuthorizeAttribute>();
         if (authorizeAttributes.Any() == false)
-        {
             throw new InvalidOperationException("Test data invalid.No authorize attribute found.");
-        }
 
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetAllSupportableMethodBaseUrl();
         var data = DataGenerator.Create(resourceType);
         var id = data.GetPropertyValue(nameof(IEntity<object>.Id));
-
 
         var responseMessage = await client.GetAsync(baseUrl);
         responseMessage.IsSuccessStatusCode.Should().BeFalse();
@@ -69,9 +67,7 @@ public class CommonAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
         var authorizeAttributes = resourceType
             .GetCustomAttributes<EntityAuthorizeAttribute>();
         if (authorizeAttributes.Any() == false)
-        {
             throw new InvalidOperationException("Test data invalid.No authorize attribute found.");
-        }
 
         var userName = Guid.NewGuid().ToString();
         var password = DefaultPassword;
@@ -80,7 +76,7 @@ public class CommonAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
         var client = _factory.CreateClient();
         var token = await client.LoginAndGetToken(userName, password);
 
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetAllSupportableMethodBaseUrl();
         var defaultModel = DataGenerator.Create(resourceType);
         var dbContext = GetDbContext();
         dbContext.Add(defaultModel);

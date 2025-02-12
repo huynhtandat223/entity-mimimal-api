@@ -1,10 +1,17 @@
-﻿using CFW.ODataCore.Models;
+﻿using CFW.EntityApi.Models;
 
-namespace CFW.ODataCore.Attributes;
+namespace CFW.EntityApi.Attributes;
 
-public class UnboundActionAttribute : UnboundOperationAttribute
+public class UnboundActionAttribute : BaseRoutingAttribute
 {
-    public UnboundActionAttribute(string operationName) : base(operationName, OperationType.Action)
+    public string ActionName { get; init; }
+
+    public ApiMethod ActionMethod { get; set; } = ApiMethod.Post;
+
+    internal Type? TargetType { get; set; }
+
+    public UnboundActionAttribute(string actionName)
     {
+        ActionName = actionName;
     }
 }

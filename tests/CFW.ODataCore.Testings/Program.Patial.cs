@@ -1,4 +1,4 @@
-﻿namespace CFW.ODataCore.Testings;
+﻿namespace CFW.EntityMinimalApi.Testings;
 
 public partial class Program
 {

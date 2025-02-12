@@ -1,11 +1,11 @@
-﻿using CFW.ODataCore.Models;
+﻿using CFW.EntityApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace CFW.ODataCore.Testings;
+namespace CFW.EntityMinimalApi.Testings;
 
-[Entity(RoutingName, Methods = [EntityMethod.Post])]
+[Entity(RoutingName, Methods = [ApiMethod.Post])]
 public class ConfiguredDbSet
 {
     public Guid Id { set; get; }

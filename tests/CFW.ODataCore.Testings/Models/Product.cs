@@ -1,6 +1,6 @@
 ﻿using CFW.Core.Entities;
 
-namespace CFW.ODataCore.Testings.Models;
+namespace CFW.EntityMinimalApi.Testings.Models;
 
 [Entity("products")]
 public class Product : IEntity<Guid>
@@ -12,4 +12,14 @@ public class Product : IEntity<Guid>
     public string? Description { get; set; }
 
     public Category? Category { get; set; } = default!;
+
+    public ProductType ProductType { get; set; }
+}
+
+public enum ProductType
+{
+    Unknown,
+    Physical,
+    Digital,
+    Service,
 }

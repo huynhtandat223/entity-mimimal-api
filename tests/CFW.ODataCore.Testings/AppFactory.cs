@@ -1,23 +1,6 @@
 ﻿[assembly: TestFramework(AssemblyFixtureFramework.TypeName, AssemblyFixtureFramework.AssemblyName)]
 
-namespace CFW.ODataCore.Testings;
-public class NonInitAppFactory : WebApplicationFactory<Program>, IDisposable
-{
-    public const string TestingEnvironment = "Testing";
-
-    protected override IHost CreateHost(IHostBuilder builder)
-    {
-        return base.CreateHost(builder);
-    }
-
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        base.ConfigureWebHost(builder);
-        builder.UseEnvironment(TestingEnvironment);
-        builder.UseContentRoot(Directory.GetCurrentDirectory());
-    }
-}
-
+namespace CFW.EntityMinimalApi.Testings;
 
 public class AppFactory : WebApplicationFactory<Program>, IDisposable
 {
@@ -25,9 +8,7 @@ public class AppFactory : WebApplicationFactory<Program>, IDisposable
     {
         var dbDirectory = Path.Combine(Directory.GetCurrentDirectory(), "testDbs");
         if (Directory.Exists(dbDirectory))
-        {
             Directory.Delete(dbDirectory, true);
-        }
     }
 
     public const string TestingEnvironment = "Testing";
@@ -37,6 +18,5 @@ public class AppFactory : WebApplicationFactory<Program>, IDisposable
         base.ConfigureWebHost(builder);
         builder.UseEnvironment(TestingEnvironment);
         builder.UseContentRoot(Directory.GetCurrentDirectory());
-
     }
 }

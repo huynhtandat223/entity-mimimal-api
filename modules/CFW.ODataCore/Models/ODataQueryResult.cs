@@ -1,11 +1,8 @@
-﻿using System.Text.Json.Serialization;
+﻿namespace CFW.EntityApi.Models;
 
-namespace CFW.ODataCore.Models;
-
-public class ODataQueryResult<TViewModel>
+public class ODataQueryResult<T>
 {
-    public IEnumerable<TViewModel> Value { set; get; } = Enumerable.Empty<TViewModel>();
+    public IEnumerable<T> Value { get; set; } = Array.Empty<T>();
 
-    [JsonPropertyName("@odata.count")]
     public int? TotalCount { set; get; }
 }

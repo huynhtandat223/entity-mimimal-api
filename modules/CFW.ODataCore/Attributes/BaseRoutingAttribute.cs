@@ -1,11 +1,9 @@
-﻿namespace CFW.ODataCore.Attributes;
+﻿namespace CFW.EntityApi.Attributes;
 
 public abstract class BaseRoutingAttribute : Attribute
 {
     /// <summary>
-    /// If empty, the value will be taken from user configuration 
-    /// <see cref="ServicesCollectionExtensions.AddEntityMinimalApi(IMvcBuilder, CFW.ODataCore.Core.MetadataContainerFactory?, string, Action{Microsoft.AspNetCore.OData.ODataOptions}?)"/>"/>
-    /// or default value <see cref="Constants.DefaultODataRoutePrefix"/>.
+    /// If not set, the name will take value of container default. <see cref="Models.Builders.EntityApiBuilder.SetDefault(bool)"/>
     /// </summary>
     public string? RoutePrefix { get; set; }
 }

@@ -166,7 +166,6 @@ public class EntityQueryDefaultConfigureTests : BaseTests, IAssemblyFixture<AppF
 
         var actual = response.GetODataQueryResult(dbModelType);
         var actualValues = actual.Value!.Select(x => x.GetPropertyValue(randomProperty.Name)).ToList()!;
-
         actualValues.Should().Contain(randomValue!);
     }
 

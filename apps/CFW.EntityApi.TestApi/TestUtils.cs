@@ -1,15 +1,12 @@
 ﻿using CFW.EntityApi.Models;
 using CFW.EntityApi.TestApi;
-using CFW.EntityMinimalApi.Testings;
-using FluentAssertions;
-using FluentAssertions.Equivalency;
 using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Web;
 
-namespace CFW.EntityMinimalApi.Testings;
+namespace CFW.EntityApi.TestApi;
 
 public static class TestUtils
 {
@@ -79,12 +76,12 @@ public static class TestUtils
     public const string AdminRole = "Admin";
     public const string SupperAdminRole = "SuperAdmin";
 
-    public static EquivalencyAssertionOptions<TExpectation> CompareDecimal<TExpectation>(
-         EquivalencyAssertionOptions<TExpectation> o)
-    {
-        return o.Using<decimal>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.01M))
-            .WhenTypeIs<decimal>();
-    }
+    //public static EquivalencyAssertionOptions<TExpectation> CompareDecimal<TExpectation>(
+    //     EquivalencyAssertionOptions<TExpectation> o)
+    //{
+    //    return o.Using<decimal>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.01M))
+    //        .WhenTypeIs<decimal>();
+    //}
 
     public static StringContent ToStringContent(this object content)
     {

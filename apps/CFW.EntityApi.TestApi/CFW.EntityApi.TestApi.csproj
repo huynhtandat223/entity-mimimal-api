@@ -15,8 +15,8 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FluentAssertions" Version="7.1.0" />
-		<PackageReference Include="Xunit.Extensions.AssemblyFixture" Version="2.6.0" />
+    <PackageReference Include="FluentAssertions" Version="7.1.0" />
+    <PackageReference Include="Xunit.Extensions.AssemblyFixture" Version="2.6.0" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -32,6 +32,9 @@
   <!--Show internal members to test project-->
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>CFW.EntityApi.TestApi</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>CFW.EntityMinimalApi.Testings</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>

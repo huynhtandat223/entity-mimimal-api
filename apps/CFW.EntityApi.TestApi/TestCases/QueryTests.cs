@@ -1,10 +1,9 @@
-﻿using CFW.EntityApi.TestApi.Infrastructures.UnitTests;
+﻿using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
+using CFW.EntityApi.TestApi.Infrastructures.UnitTests;
 using CFW.EntityApi.TestApi.Models;
-using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace CFW.EntityApi.TestApi.TestCases;
-
 
 public class QueryTests : BaseTests, IAssemblyFixture<AppFactory>
 {
@@ -14,14 +13,18 @@ public class QueryTests : BaseTests, IAssemblyFixture<AppFactory>
 
     [Theory]
     [InlineData(typeof(Category))]
+    //[InlineData(typeof(Product))]
     public async Task Test(Type dbModelType)
     {
         // Arrange
-        var client = _factory.CreateClient();
-        var baseUrl = $"{Constants.DefaultODataRoutePrefix}/categories";
-        //var complexProps = dbModelType.GetComplexTypeProperties();
+        var routePrefix = Constants.DefaultODataRoutePrefix;
+        var factory = SetupEntityApi(routePrefix);
 
-        var initialData = await SeedData(dbModelType, 6);
+        var baseUrl = $"{routePrefix}/categories";
+        var complexProps = dbModelType.GetComplexTypeProperties();
+        var client = factory.CreateClient();
+        var db = factory.Services.CreateScope().ServiceProvider.GetRequiredService<AppDbContext>();
+        var initialData = await SeedData(dbModelType, 6, db);
 
         // Act
         var response = await client.GetAsync(baseUrl);

@@ -1,5 +1,10 @@
 ﻿namespace CFW.EntityApi.Intefaces;
 
+public interface IOperationHandler
+{
+
+}
+
 public interface IOperationHandler<TRequest>
 {
     Task<Result> Handle(TRequest request, CancellationToken cancellationToken);

@@ -6,7 +6,7 @@ public class EntityDelta
 {
     public IEntityType? EfCoreEntityType { get; set; }
 
-    public IComplexProperty? ComplexProperty { get; set; }
+    public IComplexProperty? EfCoreComplexProperty { get; set; }
 
     public Dictionary<string, object?> ChangedProperties { get; }
         = new Dictionary<string, object?>();

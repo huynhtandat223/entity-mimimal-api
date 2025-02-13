@@ -16,7 +16,7 @@ public class DbContextSetting
         }
         else if (SqlServerConnectionString != null)
         {
-            //options.UseSqlServer(SqlServerConnectionString);
+            options.UseSqlServer(SqlServerConnectionString);
         }
     }
 }

@@ -19,7 +19,7 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
         operation.Parameters ??= new List<OpenApiParameter>();
         AddOpenApiParameter(operation, AllowedQueryOptions.All);
 
-        var memberRouter = containerMemberRegistrationContext.MemberRouter;
+        var memberRouter = containerMemberRegistrationContext.QueryMemberRouter;
         if (memberRouter is not IDbEntityApiQueryRouter dbEntityApiQueryRouter)
             return Task.CompletedTask;
 

@@ -8,6 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Features\Categories\CategoriesPingPongPatchMethodNoResponseData.cs" />
+    <Compile Remove="Features\Categories\CategoriesPingPongPutMethodNonKey.cs" />
+    <Compile Remove="Features\Categories\CategoriesPingPongWithKey.cs" />
+    <Compile Remove="Features\Categories\CategoriesPingPongWithNonKey.cs" />
+    <Compile Remove="Features\Categories\CategoriesPingPongWithNonKeyGetMethodNoResponseData.cs" />
+    <Compile Remove="Features\Categories\CategoriesPingPongWithNonKeyNoResponseDataAttr.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.1" />
@@ -16,6 +25,7 @@
 
 	<ItemGroup>
     <PackageReference Include="FluentAssertions" Version="7.1.0" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
     <PackageReference Include="Xunit.Extensions.AssemblyFixture" Version="2.6.0" />
 	</ItemGroup>
 
@@ -34,14 +44,11 @@
 	</ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\modules\CFW.Core.EfCoreExtensions\CFW.Core.EfCoreExtensions.csproj" />
     <ProjectReference Include="..\..\modules\CFW.Core\CFW.Core.csproj" />
     <ProjectReference Include="..\..\modules\CFW.ODataCore\CFW.EntityApi.csproj" />
     <ProjectReference Include="..\..\tests\CFW.CoreTestings\CFW.CoreTestings.csproj" />
     <ProjectReference Include="..\CFW.ServiceDefaults\CFW.ServiceDefaults.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="TestCases\" />
   </ItemGroup>
 
 </Project>

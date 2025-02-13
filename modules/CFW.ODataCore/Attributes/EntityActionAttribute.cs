@@ -1,38 +1,36 @@
-﻿using CFW.EntityApi.Models;
+﻿using CFW.Core.Utils;
+using CFW.EntityApi.Models;
 
 namespace CFW.EntityApi.Attributes;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public class EntityActionAttribute : BaseRoutingAttribute
+public class ActionAttribute : BaseRoutingAttribute
 {
-    public string ActionName { get; init; }
+    public ApiMethod Method { get; set; } = ApiMethod.Post;
 
-    /// <summary>
-    /// BoundEntityType can be target type of multiple entity attribute <see cref="EntityAttribute"/>
-    /// If empty, the value will be taken from the first entity name of those attributes.
-    /// </summary>
-    public string? EntityName { get; set; }
+    internal Type TargetType { get; set; } = null!;
 
-    /// <summary>
-    /// HttpMethod for action.
-    /// </summary>
-    public ApiMethod HttpMethod { get; set; } = ApiMethod.Post;
+    internal Type InterfaceType { get; set; } = null!;
 
-    internal Type? TargetType { get; set; }
+    public string ActionName { get; set; }
 
-    internal Type BoundEntityType { get; init; }
-
-    public EntityActionAttribute(string actionName, Type boundEntityType)
+    public ActionAttribute(string routeName)
     {
-        ActionName = actionName;
-        BoundEntityType = boundEntityType;
+        ActionName = StringUtils.SanitizeRoute(routeName);
     }
 }
 
-public class EntityActionAttribute<TEntity> : EntityActionAttribute
+public class EntityActionAttribute : ActionAttribute
 {
-    public EntityActionAttribute(string actionName)
-        : base(actionName, typeof(TEntity))
+    public string EntityName { get; set; }
+
+    public EntityActionAttribute(string routeName) : base(routeName)
     {
+        var segments = StringUtils.SanitizeRoute(routeName).Split('/');
+        if (segments.Length < 2)
+            throw new ArgumentException("Route name must contain at least two segments.");
+
+        EntityName = segments.First();
+        ActionName = string.Join('/', segments.Skip(1));
     }
 }

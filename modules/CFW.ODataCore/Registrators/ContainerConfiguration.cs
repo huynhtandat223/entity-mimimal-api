@@ -1,20 +1,33 @@
-﻿using Microsoft.OData.ModelBuilder;
+﻿using CFW.EntityApi.Models.Builders;
+using Microsoft.AspNetCore.OData;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.OData.ModelBuilder;
 
 namespace CFW.EntityApi.Registrators;
 
 public class ContainerConfiguration
 {
-    internal string RoutePrefix { get; set; } = string.Empty;
+    public AllowedQueryOptions AllowedQueryOptions { get; internal set; } = AllowedQueryOptions.All;
 
-    internal bool IsDefault { get; set; } = true;
+    internal AttributeApiBuilder? AttributeApiBuilder { get; set; }
+
+    public string RoutePrefix { get; internal set; } = string.Empty;
+
+    public bool IsDefault { get; internal set; } = true;
+
+    public int DefaultPageSize { get; internal set; } = 10;
 
     /// <summary>
     /// Configure model builder when all entities are added, before call builder.GetEdmModel()
     /// </summary>
     internal Action<ODataConventionModelBuilder>? ConfigureModelBuilder { get; set; }
 
+    internal Action<ODataOptions>? ConfigureODataOptions { get; set; }
+
     /// <summary>
     /// Configure minimal api container route group
     /// </summary>
     internal Action<RouteGroupBuilder>? ConfigureContainerRouteGroup { get; set; }
+
+    internal IList<IApiFeature> ApiFeatures { get; } = new List<IApiFeature>();
 }

@@ -1,53 +1,52 @@
-﻿using CFW.EntityApi.Models;
+﻿using CFW.Core.Utils;
+using CFW.EntityApi.Models;
 using CFW.EntityApi.Models.Builders;
-using CFW.EntityApi.Queries;
 using CFW.EntityApi.Registrators;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData;
-using Microsoft.OData.ModelBuilder;
 using System.Text;
 
 namespace CFW.EntityApi;
 
 public static class ServicesCollectionExtensions
 {
-    public static EntityApiBuilder AddEntityApi(this IServiceCollection services, string defaultRoutePrefix)
+    public static ContainerApiBuilder AddEntityMinimalApi(this IServiceCollection services, string defaultRoutePrefix)
     {
         //OData services
-        var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
-        formatter.SupportedEncodings.Add(Encoding.UTF8);
-        services.TryAddSingleton(formatter);
+        services.TryAddSingleton(_ =>
+        {
+            var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
+            formatter.SupportedEncodings.Add(Encoding.UTF8);
 
-        //cached types
-        services.TryAddSingleton<ITypesResolver, EntityApiAssemblyResolver>();
-        //TODO: verify if this is correct for cached OData types purpose
-        services.TryAddSingleton<IAssemblyResolver>(s => s.GetRequiredService<ITypesResolver>());
+            return formatter;
+        });
 
-        services.TryAddSingleton(typeof(IDbEntityApiQueryRouter<,,>), typeof(DefaultDbEntityApiQueryRouter<,,>));
-        services.TryAddSingleton(typeof(IEntityApiQuery<>), typeof(DefaultEntityApiQueryRouter<>));
-
-        var builder = new EntityApiBuilder(defaultRoutePrefix, services);
-        services.AddSingleton(builder.containerRegistrator);
+        var sanitizeRoute = StringUtils.SanitizeRoute(defaultRoutePrefix);
+        var builder = new ContainerApiBuilder(sanitizeRoute, services);
 
         return builder;
     }
 
-    public static WebApplication UseEntityApi(this WebApplication app)
+    public static WebApplication UseEntityMinimalApi(this WebApplication app)
     {
         var containerConfigurations = app.Services.GetServices<ContainerConfiguration>();
-        var typeResolver = app.Services.GetRequiredService<ITypesResolver>();
 
         foreach (var containerConfiguration in containerConfigurations)
         {
-            var containerRegistrationContext = new ContainerRegistrationContext(app, containerConfiguration, typeResolver);
-            containerRegistrationContext.ConfigureContainerRoutes();
+            var typeResolver = app.Services.GetService<ITypesResolver>()!;
+            if (typeResolver == null)
+                typeResolver = new DefaultTypesResolver(app.Services, containerConfiguration);
+            var containerRegistrationContext
+                = new ContainerRegistrationContext(app.Services, containerConfiguration, typeResolver);
 
-            var memberApiBuilders = app.Services.GetKeyedServices<IEntityMemberApiBuilder>(containerConfiguration.RoutePrefix);
-            foreach (var memberBuilder in memberApiBuilders)
+            foreach (var feature in containerConfiguration.ApiFeatures)
             {
-                memberBuilder.Build(containerRegistrationContext);
+                feature.Register(containerRegistrationContext);
             }
+
+            //var actionRouter = ActivatorUtilities.CreateInstance<Actions.Route>(app.Services)!;
+            //actionRouter.Register(containerRegistrationContext.ContainerGroupRoute, typeResolver.ActionAttributes);
         }
 
         return app;

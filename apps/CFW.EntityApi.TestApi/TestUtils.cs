@@ -134,33 +134,6 @@ public static class TestUtils
     }
 
     /// <summary>
-    /// Get the JSON element properties of an array in the response message
-    /// </summary>
-    /// <param name="httpResponseMessage"></param>
-    /// <param name="jsonPropertyName"></param>
-    /// <returns></returns>
-    public static List<string> GetJsonElementPropertiesInArray(this HttpResponseMessage httpResponseMessage, string arrayProperty)
-    {
-        var content = httpResponseMessage.Content.ReadAsStringAsync().Result;
-
-        // Validate the JSON body only contains the selected properties
-        var responseJson = JsonDocument.Parse(content);
-        var responseJsonRoot = responseJson.RootElement;
-
-        if (responseJsonRoot.ValueKind != JsonValueKind.Object)
-            throw new InvalidOperationException("The response body is not a JSON object");
-
-        var santityArraryProperty = arrayProperty.ToLower();
-        var arrayJson = responseJsonRoot.EnumerateObject().FirstOrDefault(x => x.Name.ToLower() == santityArraryProperty);
-
-        if (arrayJson.Value.ValueKind != JsonValueKind.Array)
-            throw new InvalidOperationException($"The property {arrayProperty} is not an array");
-
-        return arrayJson.Value.EnumerateArray().First().EnumerateObject().Select(x => x.Name).ToList();
-    }
-
-
-    /// <summary>
     /// Parse the response OBJECT properties to a dictionary
     /// </summary>
     /// <param name="httpResponseMessage"></param>
@@ -177,6 +150,7 @@ public static class TestUtils
         return dic;
     }
 
+    [Obsolete]
     public static string[] GetComplexTypeProperties(this Type type)
     {
         return type.GetProperties()
@@ -193,6 +167,29 @@ public static class TestUtils
             .ToArray();
 
         return collectionProperties;
+    }
+
+    public static string[] PickRandomProperties(this Type type, int count)
+    {
+        return type.GetProperties()
+            .Random(count)
+            .Select(x => x.Name)
+            .ToArray();
+    }
+
+    public static Type GetEntityType(TestData testData)
+    {
+        return testData.GetType().GetGenericArguments().Single();
+    }
+
+    public static int[] GetJsonODataQueryPropertyCount(string jsonString)
+    {
+        var json = JsonDocument.Parse(jsonString);
+        var value = json.RootElement.GetProperty("value");
+        var propertyCounts = value.EnumerateArray()
+            .Select(x => x.EnumerateObject().Count())
+            .ToArray();
+        return propertyCounts;
     }
 }
 

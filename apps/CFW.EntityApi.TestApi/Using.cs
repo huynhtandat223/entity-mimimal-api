@@ -1,5 +1,10 @@
-﻿global using CFW.Core.Utils;
+﻿global using CFW.Core.Results;
+global using CFW.Core.Utils;
+global using CFW.CoreTestings.DataGenerations;
+global using CFW.EntityApi.TestApi.Infrastructures.UnitTests;
+global using CFW.EntityApi.TestApi.Models;
 global using FluentAssertions;
 global using Microsoft.AspNetCore.Mvc.Testing;
 global using Xunit;
+global using Xunit.Abstractions;
 global using Xunit.Extensions.AssemblyFixture;

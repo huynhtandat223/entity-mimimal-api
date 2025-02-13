@@ -28,7 +28,7 @@ builder.Services.AddDbContext<CoreIdentityDbContext>(
 //        o.UseAutoGenerateEndpoints();
 //    }));
 
-builder.Services.AddEntityApi("odata-api").UseDbContext<CoreIdentityDbContext>();
+builder.Services.AddEntityMinimalApi("odata-api").PopuplateEntityFrameworkEntities<CoreIdentityDbContext>();
 
 //Add swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -95,7 +95,7 @@ app.UseSwaggerUI();
 
 //Use entity minimal api
 //app.UseEntityMinimalApi();
-app.UseEntityApi();
+app.UseEntityMinimalApi();
 
 
 using var scope = app.Services.CreateScope();

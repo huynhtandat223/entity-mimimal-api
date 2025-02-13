@@ -1,152 +1,174 @@
-﻿//using CFW.ODataCore.Models.Metadata;
-//using System.Text.Json;
-//using System.Text.Json.Serialization;
+﻿using CFW.Core.Utils;
+using Microsoft.EntityFrameworkCore.Metadata;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
-//namespace CFW.ODataCore.Models.Deltas;
+namespace CFW.EntityApi.Models.Deltas;
 
-//public class EntityDeltaConverter<TSource> : JsonConverter<EntityDelta<TSource>>
-//    where TSource : class
-//{
-//    private readonly MetadataEntityProperty _metadataEntityProperty;
+public class EntityDeltaConverter<TSource> : JsonConverter<EntityDelta<TSource>>
+    where TSource : class
+{
+    private readonly IEntityType? _entityType;
+    private readonly IComplexProperty? _complexProperty;
 
-//    public EntityDeltaConverter(MetadataEntityProperty metadataEntityProperty)
-//    {
-//        _metadataEntityProperty = metadataEntityProperty;
-//    }
+    public EntityDeltaConverter(IEntityType entityType)
+    {
+        _entityType = entityType;
+    }
 
-//    private static string ResolvePropertyName(string propertyName, JsonSerializerOptions options)
-//    {
-//        return options.PropertyNamingPolicy?.ConvertName(propertyName) ?? propertyName;
-//    }
+    public EntityDeltaConverter(IComplexProperty complexProperty)
+    {
+        _complexProperty = complexProperty;
+    }
 
-//    public override EntityDelta<TSource>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-//    {
-//        var delta = new EntityDelta<TSource>();
-//        delta.ComplexProperty = _metadataEntityProperty.EfCoreComplexProperty;
-//        delta.EfCoreEntityType = _metadataEntityProperty.EfCoreEntityType;
+    private static string ResolvePropertyName(string propertyName, JsonSerializerOptions options)
+    {
+        return options.PropertyNamingPolicy?.ConvertName(propertyName) ?? propertyName;
+    }
 
-//        var scalarPropertyMap = _metadataEntityProperty.ScalarProperties.ToDictionary(
-//            p => ResolvePropertyName(p.Name, options),
-//            p => p,
-//            StringComparer.OrdinalIgnoreCase
-//        );
+    public override EntityDelta<TSource>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var delta = new EntityDelta<TSource>();
 
-//        var complexPropertyMap = _metadataEntityProperty.ComplexProperties.ToDictionary(
-//            p => ResolvePropertyName(p.Name, options),
-//            p => p,
-//            StringComparer.OrdinalIgnoreCase
-//        );
+        delta.EfCoreEntityType = _entityType;
+        delta.EfCoreComplexProperty = _complexProperty;
 
-//        var collectionPropertyMap = _metadataEntityProperty.CollectionProperties.ToDictionary(
-//            p => ResolvePropertyName(p.Name, options),
-//            p => p,
-//            StringComparer.OrdinalIgnoreCase
-//        );
+        var scalarPropertyMap = new Dictionary<string, IProperty>();
+        var complexPropertyMap = new Dictionary<string, IComplexProperty>();
+        var collectionPropertyMap = new Dictionary<string, INavigation>();
+        var entityPropertyMap = new Dictionary<string, INavigation>();
+        if (_entityType is not null)
+        {
+            scalarPropertyMap = _entityType!.GetProperties().ToDictionary(
+            p => ResolvePropertyName(p.Name, options),
+            p => p,
+            StringComparer.OrdinalIgnoreCase);
 
-//        var entityPropertyMap = _metadataEntityProperty.EntityProperties.ToDictionary(
-//            p => ResolvePropertyName(p.Name, options),
-//            p => p,
-//            StringComparer.OrdinalIgnoreCase
-//        );
+            complexPropertyMap = _entityType.GetComplexProperties().ToDictionary(
+            p => ResolvePropertyName(p.Name, options),
+            p => p,
+            StringComparer.OrdinalIgnoreCase);
 
-//        // Parse the JSON
-//        if (reader.TokenType != JsonTokenType.StartObject)
-//            throw new JsonException("Expected a JSON object.");
+            var navigations = _entityType.GetNavigations();
+            collectionPropertyMap = navigations.Where(x => x.IsCollection).ToDictionary(
+                        p => ResolvePropertyName(p.Name, options),
+                        p => p,
+                        StringComparer.OrdinalIgnoreCase);
 
-//        while (reader.Read())
-//        {
-//            if (reader.TokenType == JsonTokenType.EndObject)
-//                break;
+            entityPropertyMap = navigations.Where(x => !x.IsCollection).ToDictionary(
+            p => ResolvePropertyName(p.Name, options),
+            p => p,
+            StringComparer.OrdinalIgnoreCase);
+        }
 
-//            if (reader.TokenType != JsonTokenType.PropertyName)
-//                throw new JsonException("Expected a JSON property.");
+        if (_complexProperty is not null)
+        {
+            scalarPropertyMap = _complexProperty!.ComplexType.GetDeclaredProperties().ToDictionary(
+            p => ResolvePropertyName(p.Name, options),
+            p => p,
+            StringComparer.OrdinalIgnoreCase);
+        }
 
-//            var jsonPropertyName = reader.GetString();
-//            if (jsonPropertyName.IsNullOrWhiteSpace())
-//                throw new NotImplementedException();
+        // Parse the JSON
+        if (reader.TokenType != JsonTokenType.StartObject)
+            throw new JsonException("Expected a JSON object.");
 
-//            // Move to the value
-//            reader.Read();
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
+                break;
 
-//            if (scalarPropertyMap.TryGetValue(jsonPropertyName!, out var scalarPropertyInfo))
-//            {
-//                var propertyInfo = scalarPropertyInfo!.PropertyInfo;
+            if (reader.TokenType != JsonTokenType.PropertyName)
+                throw new JsonException("Expected a JSON property.");
 
-//                var scalarPropertyValue = JsonSerializer.Deserialize(ref reader, propertyInfo!.PropertyType, options);
+            var jsonPropertyName = reader.GetString();
+            if (jsonPropertyName.IsNullOrWhiteSpace())
+                throw new NotImplementedException();
 
-//                propertyInfo.SetValue(delta!.Instance, scalarPropertyValue);
-//                delta.ChangedProperties[scalarPropertyInfo.Name] = scalarPropertyValue;
-//                continue;
-//            }
+            // Move to the value
+            reader.Read();
 
-//            if (complexPropertyMap.TryGetValue(jsonPropertyName!, out var complexPropertyInfo))
-//            {
-//                //set delta instance
-//                var complexDeltaType = typeof(EntityDelta<>).MakeGenericType(complexPropertyInfo!.ClrType);
-//                var complexDelta = JsonSerializer.Deserialize(ref reader, complexDeltaType, options) as EntityDelta;
-//                complexDelta!.ComplexProperty = complexPropertyInfo;
+            if (scalarPropertyMap.TryGetValue(jsonPropertyName!, out var scalarPropertyInfo))
+            {
+                var propertyInfo = scalarPropertyInfo!.PropertyInfo;
 
-//                delta!.ChangedProperties[complexPropertyInfo.Name] = complexDelta;
+                var scalarPropertyValue = JsonSerializer.Deserialize(ref reader, propertyInfo!.PropertyType, options);
 
-//                var complexDeltaInstance = complexDelta!.GetType().GetProperty("Instance")!.GetValue(complexDelta);
-//                complexPropertyInfo.PropertyInfo!.SetValue(delta.Instance, complexDeltaInstance);
+                propertyInfo.SetValue(delta!.Instance, scalarPropertyValue);
+                delta.ChangedProperties[scalarPropertyInfo.Name] = scalarPropertyValue;
+                continue;
+            }
 
-//                continue;
-//            }
+            if (complexPropertyMap.TryGetValue(jsonPropertyName!, out var complexPropertyInfo))
+            {
+                //set delta instance
+                var complexDeltaType = typeof(EntityDelta<>)
+                    .MakeGenericType(complexPropertyInfo!.ClrType);
 
-//            if (collectionPropertyMap.TryGetValue(jsonPropertyName!, out var collectionPropertyInfo))
-//            {
-//                if (reader.TokenType == JsonTokenType.Null)
-//                {
-//                    reader.Skip();
-//                    continue;
-//                }
+                var complexDelta = JsonSerializer.Deserialize(ref reader, complexDeltaType, options) as EntityDelta;
+                //complexDelta!.ComplexProperty = complexPropertyInfo;
 
-//                if (reader.TokenType != JsonTokenType.StartArray)
-//                    throw new InvalidOperationException("Expected a JSON array.");
+                delta!.ChangedProperties[complexPropertyInfo.Name] = complexDelta;
 
-//                var elementType = collectionPropertyInfo.ForeignKey.DeclaringEntityType.ClrType;
+                var complexDeltaInstance = complexDelta!.GetType().GetProperty("Instance")!.GetValue(complexDelta);
+                complexPropertyInfo.PropertyInfo!.SetValue(delta.Instance, complexDeltaInstance);
 
-//                var deltaArrayType = typeof(EntityDelta<>).MakeGenericType(elementType);
-//                var deltaSet = new EntityDeltaSet { ObjectType = elementType };
-//                while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-//                {
-//                    var elementDelta = JsonSerializer
-//                        .Deserialize(ref reader, deltaArrayType, options) as EntityDelta;
+                continue;
+            }
 
-//                    deltaSet.ChangedProperties.Add(elementDelta!);
-//                }
+            if (collectionPropertyMap.TryGetValue(jsonPropertyName!, out var collectionPropertyInfo))
+            {
+                if (reader.TokenType == JsonTokenType.Null)
+                {
+                    reader.Skip();
+                    continue;
+                }
 
-//                delta!.ChangedProperties[collectionPropertyInfo.Name] = deltaSet;
+                if (reader.TokenType != JsonTokenType.StartArray)
+                    throw new InvalidOperationException("Expected a JSON array.");
 
-//                var list = deltaSet.GetList();
-//                collectionPropertyInfo.PropertyInfo!.SetValue(delta.Instance, list);
+                var elementType = collectionPropertyInfo.ForeignKey.DeclaringEntityType.ClrType;
 
-//                continue;
-//            }
+                var deltaArrayType = typeof(EntityDelta<>).MakeGenericType(elementType);
+                var deltaSet = new EntityDeltaSet { ObjectType = elementType };
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                {
+                    var elementDelta = JsonSerializer
+                        .Deserialize(ref reader, deltaArrayType, options) as EntityDelta;
 
-//            if (entityPropertyMap.TryGetValue(jsonPropertyName!, out var entityPropertyInfo))
-//            {
-//                var entityDeltaType = typeof(EntityDelta<>).MakeGenericType(entityPropertyInfo!.ClrType);
-//                var entityDelta = JsonSerializer.Deserialize(ref reader, entityDeltaType, options) as EntityDelta;
-//                entityDelta!.EfCoreEntityType = entityPropertyInfo.ForeignKey.DeclaringEntityType;
+                    deltaSet.ChangedProperties.Add(elementDelta!);
+                }
 
-//                delta!.ChangedProperties[entityPropertyInfo.Name] = entityDelta;
+                delta!.ChangedProperties[collectionPropertyInfo.Name] = deltaSet;
 
-//                var entityDeltaInstance = entityDelta!.GetType().GetProperty("Instance")!.GetValue(entityDelta);
-//                entityPropertyInfo.PropertyInfo!.SetValue(delta.Instance, entityDeltaInstance);
-//                continue;
-//            }
+                var list = deltaSet.GetList();
+                collectionPropertyInfo.PropertyInfo!.SetValue(delta.Instance, list);
 
-//            //no allow properties
-//            reader.Skip();
-//        }
+                continue;
+            }
 
-//        return delta;
-//    }
+            if (entityPropertyMap.TryGetValue(jsonPropertyName!, out var entityPropertyInfo))
+            {
+                var entityDeltaType = typeof(EntityDelta<>).MakeGenericType(entityPropertyInfo!.ClrType);
+                var entityDelta = JsonSerializer.Deserialize(ref reader, entityDeltaType, options) as EntityDelta;
+                entityDelta!.EfCoreEntityType = entityPropertyInfo.ForeignKey.PrincipalEntityType;
 
-//    public override void Write(Utf8JsonWriter writer, EntityDelta<TSource> value, JsonSerializerOptions options)
-//    {
-//        throw new NotImplementedException();
-//    }
-//}
+                delta!.ChangedProperties[entityPropertyInfo.Name] = entityDelta;
+
+                var entityDeltaInstance = entityDelta!.GetType().GetProperty("Instance")!.GetValue(entityDelta);
+                entityPropertyInfo.PropertyInfo!.SetValue(delta.Instance, entityDeltaInstance);
+                continue;
+            }
+
+            //no allow properties
+            reader.Skip();
+        }
+
+        return delta;
+    }
+
+    public override void Write(Utf8JsonWriter writer, EntityDelta<TSource> value, JsonSerializerOptions options)
+    {
+        throw new NotImplementedException();
+    }
+}

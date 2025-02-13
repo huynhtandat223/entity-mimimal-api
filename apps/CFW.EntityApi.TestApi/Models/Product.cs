@@ -1,9 +1,7 @@
 ﻿using CFW.Core.Entities;
-using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
 
 namespace CFW.EntityApi.TestApi.Models;
 
-[DbEntity<AppDbContext, Product, Guid>]
 public class Product : IEntity<Guid>
 {
     public Guid Id { get; set; }

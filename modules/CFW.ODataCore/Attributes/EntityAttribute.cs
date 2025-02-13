@@ -3,6 +3,12 @@ using Microsoft.AspNetCore.OData.Query;
 
 namespace CFW.EntityApi.Attributes;
 
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public class EntityConfigurationAttribute : BaseRoutingAttribute
+{
+    public string? Name { get; set; }
+}
+
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class EntityAttribute(string? name = null) : BaseRoutingAttribute
 {
@@ -18,4 +24,6 @@ public class EntityAttribute(string? name = null) : BaseRoutingAttribute
     public AllowedQueryOptions? GetByKeyOptions { get; set; }
 
     internal Type TargetType { get; set; } = null!;
+
+    public Type? DbContextType { get; set; } = null!;
 }

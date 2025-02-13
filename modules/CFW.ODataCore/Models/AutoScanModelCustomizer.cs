@@ -16,7 +16,7 @@ public class AutoScanModelCustomizer<TDbContext> : ModelCustomizer, IModelCustom
     private readonly Lazy<Type[]> _entityTypes = new(() =>
     {
         var entityTypes = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(assembly => assembly.GetTypes())
+            .SelectMany(assembly => assembly.GetExportedTypes())
             .Where(type => type.GetInterfaces()
                 .Any(i => EntityMarkerTypes.Contains(i) || i.IsGenericType && EntityMarkerTypes.Contains(i.GetGenericTypeDefinition())))
             .ToArray();

@@ -1,5 +1,4 @@
-﻿using CFW.EntityApi.Attributes;
-using CFW.EntityApi.Models;
+﻿using CFW.EntityApi.Models;
 using CFW.EntityMinimalApi.Testings;
 using FluentAssertions.Equivalency;
 using System.Collections;

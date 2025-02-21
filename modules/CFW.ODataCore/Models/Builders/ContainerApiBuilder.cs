@@ -10,14 +10,12 @@ namespace CFW.EntityApi.Models.Builders;
 public class ContainerApiBuilder
 {
     private readonly ContainerConfiguration _containerConfiguration = new ContainerConfiguration();
-    private readonly IServiceCollection _services;
 
     public ContainerApiBuilder(string defaultRoutePrefix, IServiceCollection services)
     {
         _containerConfiguration.RoutePrefix = defaultRoutePrefix;
 
         services.AddOptions<ODataOptions>(_containerConfiguration.RoutePrefix);
-        _services = services;
     }
 
     internal ContainerConfiguration ContainerConfiguration => _containerConfiguration;
@@ -63,14 +61,6 @@ public class ContainerApiBuilder
     {
         _containerConfiguration.ConfigureContainerRouteGroup = configureContainerRouteGroup;
         return this;
-    }
-
-    public AttributeApiBuilder UseEntityAttributes()
-    {
-        var entityAttributeBuilder = new AttributeApiBuilder();
-        _containerConfiguration.AttributeApiBuilder = entityAttributeBuilder;
-
-        return entityAttributeBuilder;
     }
 
     public EntityFrameworkPopuplationFeature<TDbContext> PopuplateEntityFrameworkEntities<TDbContext>(

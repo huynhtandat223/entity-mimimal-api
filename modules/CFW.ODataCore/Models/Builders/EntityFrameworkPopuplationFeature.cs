@@ -1,21 +1,19 @@
-﻿using CFW.Core.Utils;
-using CFW.EntityApi.Queries;
-using CFW.EntityApi.Registrators;
+﻿using CFW.EntityApi.Registrators;
 using Humanizer;
-using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.AspNetCore.OData.Formatter;
-using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace CFW.EntityApi.Models.Builders;
+
+public record DbEntityKey(Type EntityType);
 
 public class EntityFrameworkPopuplationFeature<TDbContext> : IApiFeature
     where TDbContext : DbContext
 {
     private readonly ContainerConfiguration _containerConfiguration;
+
+    private Dictionary<DbEntityKey, Action<EntityApiConfiguration>> _customEntityConfigurations
+        = new Dictionary<DbEntityKey, Action<EntityApiConfiguration>>();
 
     public EntityFrameworkPopuplationFeature(ContainerConfiguration containerConfiguration)
     {
@@ -34,7 +32,7 @@ public class EntityFrameworkPopuplationFeature<TDbContext> : IApiFeature
             return name.Pluralize().Kebaberize();
         };
 
-    internal Func<IEntityType, bool> EntitiesSelector { get; set; }
+    internal Func<IEntityType, bool> EntitiesSelector { get; set; } = x => true;
 
     public int? AutoGenerateEndpointNestedLevel { get; private set; }
 
@@ -50,13 +48,31 @@ public class EntityFrameworkPopuplationFeature<TDbContext> : IApiFeature
         return this;
     }
 
-    public async Task Register(ContainerRegistrationContext containerRegistrationContext)
+    public EntityFrameworkPopuplationFeature<TDbContext> ConfigureApi<TEntity>(
+        Action<EntityApiConfiguration<TDbContext, TEntity>> entityApiSetup)
+        where TEntity : class
+    {
+        var key = new DbEntityKey(typeof(TEntity));
+        if (_customEntityConfigurations.ContainsKey(key))
+            throw new InvalidOperationException($"Entity {typeof(TEntity).Name} already configured");
+
+        _customEntityConfigurations.Add(key, x =>
+        {
+            var entityApi = x as EntityApiConfiguration<TDbContext, TEntity>;
+            entityApiSetup(entityApi!);
+        });
+
+        return this;
+    }
+
+    public Task Register(ContainerRegistrationContext containerRegistrationContext)
     {
         using var scope = containerRegistrationContext.RootServiceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<TDbContext>();
         var model = db.Model;
 
         var entityActions = containerRegistrationContext.TypeResolver.EntityActionAttributes;
+        var customEntityConfigurations = containerRegistrationContext.ContainerConfiguration.CustomEntityImplementations;
 
         var entityTypes = db.Model.GetEntityTypes()
             .Where(x => x.FindPrimaryKey() is not null
@@ -64,73 +80,24 @@ public class EntityFrameworkPopuplationFeature<TDbContext> : IApiFeature
             .Where(EntitiesSelector)
             .ToList();
 
-
-        foreach (var entityType in entityTypes)
+        var configurations = scope.ServiceProvider.GetServices<EntityApiConfiguration>();
+        foreach (var apiConfiguration in configurations)
         {
-            var primaryKey = entityType.FindPrimaryKey()!.Properties.Single();
-
-            var configuredEntity = containerRegistrationContext.TypeResolver.ConfiguredEntities
-                .FirstOrDefault(x => x.EntityType == entityType.ClrType);
-            if (configuredEntity is null)
-            {
-                var apiConfigurationType = typeof(DbEntityApiConfiguration<,,>)
-                    .MakeGenericType(typeof(TDbContext), entityType.ClrType, primaryKey.ClrType);
-
-                configuredEntity = (EntityApiConfiguration)Activator
-                    .CreateInstance(apiConfigurationType, entityType, primaryKey)!;
-            }
-
-            var routeName = configuredEntity?.RouteName ?? _routeNameFormater(entityType);
+            var routeName = apiConfiguration.RouteName!;
 
             var router = containerRegistrationContext.ContainerGroupRoute
                     .MapGroup(routeName)
-                    .WithMetadata(configuredEntity!);
+                    .WithMetadata(apiConfiguration!);
 
             var memberRouteContext = new ContainerMemberRegistrationContext
             {
                 ContainerRegistrationContext = containerRegistrationContext,
                 MemberRouteGroup = router,
                 Name = routeName,
-                EntityConfiguration = configuredEntity!
+                EntityConfiguration = apiConfiguration!
             };
 
-
-
-            //query
-            var entityApiQueryRouterType = typeof(IDbEntityApiQueryRouter<,,>)
-            .MakeGenericType(typeof(TDbContext), entityType.ClrType, primaryKey.ClrType);
-
-            var memberRouter = (IDbEntityApiQueryRouter<TDbContext>)scope.ServiceProvider
-                .GetRequiredService(entityApiQueryRouterType);
-
-            memberRouter.KeyProperty = primaryKey;
-            memberRouter.EntityType = entityType;
-            memberRouter.EntityApiBuilder = configuredEntity;
-
-            memberRouteContext.QueryMemberRouter = memberRouter;
-            await memberRouter.Register(memberRouteContext);
-
-            //creation
-            var entityApiCreationRouterType = typeof(IDbEntityApiCreationRouter<,,>)
-                .MakeGenericType(typeof(TDbContext), entityType.ClrType, primaryKey.ClrType);
-
-            var creationRouter = (IDbEntityApiCreationRouter<TDbContext>)scope.ServiceProvider
-                .GetRequiredService(entityApiCreationRouterType);
-
-            creationRouter.KeyProperty = primaryKey;
-            creationRouter.EntityType = entityType;
-            creationRouter.EntityApiConfiguration = configuredEntity;
-
-            memberRouteContext.CreationMemberRouter = creationRouter;
-            await creationRouter.Register(memberRouteContext);
-
-            //deletion
-            var entityApiDeletionRouterType = typeof(Deletions.Router<,>)
-                .MakeGenericType(entityType.ClrType, primaryKey.ClrType);
-            var deletionRouter = (IContainerMemberRouter)ActivatorUtilities
-                .CreateInstance(scope.ServiceProvider, entityApiDeletionRouterType);
-
-            await deletionRouter.Register(memberRouteContext);
+            apiConfiguration!.RegisterRoutes(memberRouteContext);
 
             //actions
             var actions = entityActions
@@ -143,91 +110,50 @@ public class EntityFrameworkPopuplationFeature<TDbContext> : IApiFeature
                 actionRouter.Register(router, actions);
             }
         }
-    }
 
-    private static void RegisterQueryEndpoint(RouteGroupBuilder entityGroupBuider
-        , EntityApiConfiguration entityApiConfiguration
-        , ContainerRegistrationContext containerRegistrationContext)
-    {
-        //var entityConfiguration = (EntityApiConfiguration<TEntity>)containerMemberRegistrationContext.EntityConfiguration;
-
-        var allowQueryOptions = entityApiConfiguration.AllowedQueryOptions
-            ?? containerRegistrationContext.ContainerConfiguration.AllowedQueryOptions;
-
-        var ignoreQueryOptions = ~allowQueryOptions;
-
-        var entityApiQueryFactory = entityConfiguration?.QueryFactory;
-        if (entityApiQueryFactory is null)
+        foreach (var entityType in entityTypes)
         {
-            entityApiQueryFactory = s =>
+            var primaryKey = entityType.FindPrimaryKey()!.Properties.Single();
+            var apiConfigurationType = typeof(EntityApiConfiguration<,,>)
+                    .MakeGenericType(typeof(TDbContext), entityType.ClrType, primaryKey.ClrType);
+
+            var apiConfiguration = (EntityApiConfiguration)Activator
+                .CreateInstance(apiConfigurationType, entityType, primaryKey)!;
+
+            //Configure from EFCoreFeature Builder.
+            var customEntityConfigurationKey = new DbEntityKey(entityType.ClrType);
+            if (_customEntityConfigurations.TryGetValue(customEntityConfigurationKey, out var customEntityConfiguration))
             {
-                var db = s.GetRequiredService<TDbContext>();
-                var queryable = db.Set<TEntity>().AsNoTracking().AsQueryable();
+                customEntityConfiguration.Invoke(apiConfiguration);
+            }
 
-                var result = new DefaultEntityApiQuery<TEntity>(queryable);
+            var routeName = apiConfiguration?.RouteName ?? _routeNameFormater(entityType);
 
-                return Task.FromResult<IEntityApiQuery<TEntity>>(result);
+            var router = containerRegistrationContext.ContainerGroupRoute
+                    .MapGroup(routeName)
+                    .WithMetadata(apiConfiguration!);
+
+            var memberRouteContext = new ContainerMemberRegistrationContext
+            {
+                ContainerRegistrationContext = containerRegistrationContext,
+                MemberRouteGroup = router,
+                Name = routeName,
+                EntityConfiguration = apiConfiguration!
             };
+
+            apiConfiguration!.RegisterRoutes(memberRouteContext);
+
+            //actions
+            var actions = entityActions
+                .Where(x => x.EntityName == routeName)
+                .ToList();
+            memberRouteContext.Actions = actions;
+            if (actions.Any())
+            {
+                var actionRouter = ActivatorUtilities.CreateInstance<Actions.Route>(scope.ServiceProvider)!;
+                actionRouter.Register(router, actions);
+            }
         }
-
-        entityGroupBuider.MapGet("/", async (ODataOutputFormatter outputFormatter
-        , HttpContext httpContext
-        , ODataOutputFormatter formatter
-        , CancellationToken cancellationToken) =>
-        {
-            var odataFeature = containerMemberRegistrationContext.ODataFeature;
-            if (odataFeature is null)
-            {
-                odataFeature = containerMemberRegistrationContext
-                .CreateODataFeature<TEntity>(httpContext.RequestServices
-                    , EntityType, KeyProperty.PropertyInfo!);
-            }
-
-            httpContext.Features.Set(odataFeature);
-
-            var entityApiQuery = await entityApiQueryFactory(httpContext.RequestServices);
-
-            var queryBuilder = new QueryBuilder(httpContext.Request.Query);
-            var maxTop = containerMemberRegistrationContext.ODataOptions.QueryConfigurations.MaxTop;
-
-            //Maybe $top always support by Odata
-            var availableTop = new string[] { "$top", "top" };
-
-            var topQuery = httpContext.Request.Query.SingleOrDefault(x => availableTop.Contains(x.Key.ToLower().Trim()));
-
-            if (topQuery.Key.IsNullOrWhiteSpace())
-            {
-                queryBuilder.Add("$top", maxTop!.Value.ToString());
-            }
-            else
-            {
-                if (!int.TryParse(topQuery.Value, out var topValue))
-                {
-                    queryBuilder.Add("$top", maxTop!.Value.ToString());
-                }
-                else if (topValue > maxTop!.Value)
-                {
-                    queryBuilder.Add("$top", maxTop!.Value.ToString());
-                }
-            }
-
-            httpContext.Request.QueryString = queryBuilder.ToQueryString();
-
-            var odataQueryContext = new ODataQueryContext(odataFeature.Model, typeof(TEntity), odataFeature.Path);
-            var options = new ODataQueryOptions<TEntity>(odataQueryContext, httpContext.Request);
-
-            var result = await entityApiQuery.ExecuteQuery(options, cancellationToken);
-
-            var formatterContext = new OutputFormatterWriteContext(httpContext,
-                (stream, encoding) => new StreamWriter(stream, encoding),
-                result.GetType() ?? typeof(object), result)
-            {
-                ContentType = "application/json;odata.metadata=none",
-            };
-
-            await formatter.WriteAsync(formatterContext);
-
-        }).WithMetadata(containerMemberRegistrationContext);
 
         return Task.CompletedTask;
     }

@@ -2,6 +2,8 @@
 
 namespace CFW.EntityApi.Attributes;
 
+[Obsolete]
+
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class EntityAuthorizeAttribute : BaseRoutingAttribute
 {

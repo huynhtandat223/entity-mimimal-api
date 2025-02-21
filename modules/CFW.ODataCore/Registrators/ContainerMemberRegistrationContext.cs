@@ -1,6 +1,5 @@
 ﻿using CFW.EntityApi.Attributes;
 using CFW.EntityApi.Models.Builders;
-using CFW.EntityApi.Queries;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Abstracts;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -25,12 +24,6 @@ public class ContainerMemberRegistrationContext
     public List<EntityActionAttribute> Actions { get; internal set; } = new List<EntityActionAttribute>();
 
     internal EntityApiConfiguration EntityConfiguration { get; set; } = null!;
-
-    [Obsolete("Is this needed?")]
-    internal IContainerMemberRouter QueryMemberRouter { get; set; } = null!;
-
-    [Obsolete("Is this needed?")]
-    internal IContainerMemberRouter CreationMemberRouter { get; set; } = null!;
 
     public IODataFeature CreateODataFeature<TEntity>(IServiceProvider serviceProvider
         , IEntityType? entityType

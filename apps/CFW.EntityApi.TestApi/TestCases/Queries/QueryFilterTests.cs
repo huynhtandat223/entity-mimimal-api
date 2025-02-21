@@ -1,6 +1,7 @@
 ﻿using CFW.Core.EfCoreExtensions;
 using CFW.EntityApi.Models;
 using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
+using System.Web;
 
 namespace CFW.EntityApi.TestApi.TestCases.Queries;
 
@@ -18,13 +19,16 @@ public class QueryFilterTests : BaseTests, IAssemblyFixture<AppFactory>
         , Type _, string[] properties)
         where T : class
     {
+
         // Arrange
         var factory = SetupEntityApi(testData.RoutePrefix, testData.DataProvider);
 
         var baseUrl = testData.Url;
         var client = factory.CreateClient();
         var db = factory.GetScopedService<AppDbContext>();
-        var scalaProperties = db.Set<T>().GetScalarProperties();
+        var scalaProperties = db.Set<T>()
+            .GetScalarProperties(x => !x.IsDateTimeProperty());
+
         properties = properties.Intersect(scalaProperties).ToArray();
 
         if (properties.Length == 0)
@@ -40,10 +44,11 @@ public class QueryFilterTests : BaseTests, IAssemblyFixture<AppFactory>
             .GetPropertyValue(randomPropertyName);
 
         var filterValue = randomValue!.FormatOdataFilter();
+        var filterValueEncoded = HttpUtility.UrlEncode($"{randomPropertyName} eq {filterValue}");
 
         // Act
         var actual = await client.GetFromJsonAsync<ODataQueryResult<T>>(
-            $"{baseUrl}?$filter={randomPropertyName} eq {filterValue}", DefaultJsonSeriallizerOptions);
+            $"{baseUrl}?$filter={filterValueEncoded}", DefaultJsonSeriallizerOptions);
 
         // Assert
         actual.Should().NotBeNull();

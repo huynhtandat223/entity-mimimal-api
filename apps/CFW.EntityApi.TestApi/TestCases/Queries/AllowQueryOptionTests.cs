@@ -1,28 +1,45 @@
-﻿using CFW.Core.EfCoreExtensions;
-using CFW.EntityApi.Models;
+﻿using CFW.EntityApi.Models;
 using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
 using Microsoft.AspNetCore.OData.Query;
 
 namespace CFW.EntityApi.TestApi.TestCases.Queries;
 
-public class QueryGlobalConfigTests : BaseTests, IAssemblyFixture<AppFactory>
+public class AllowQueryOptionTests : BaseTests, IAssemblyFixture<AppFactory>
 {
-    public QueryGlobalConfigTests(ITestOutputHelper testOutputHelper, AppFactory factory)
+    public AllowQueryOptionTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory, types: [typeof(Category), typeof(Product)])
     {
     }
 
+    private WebApplicationFactory<Program> CreateFactory<T>(TestData<T> testData
+        , AllowedQueryOptions ignoreQueryOption, bool fromContainerConfig)
+        where T : class
+    {
+        var factory = fromContainerConfig
+        ? SetupEntityApi(testData.RoutePrefix, testData.DataProvider, containerApiBuilderSetup: b =>
+        {
+            b.ConfigureAllowQueryOptions(~ignoreQueryOption);
+        })
+        : SetupEntityApi(testData.RoutePrefix, testData.DataProvider, efCoreFeatureSetup: o =>
+        {
+            o.ConfigureApi<T>(e =>
+            {
+                e.AllowedQueryOptions = ~ignoreQueryOption;
+            });
+        });
+
+        return factory;
+    }
+
     [Theory]
     [GenericData(nameof(GetTestData), Constants.DefaultODataRoutePrefix)]
-    public async Task QueryDisableCount_SuccessWithNoTotalCountResponse<T>(TestData<T> testData)
+    [CombineRandomValue([true, false])]
+    public async Task QueryDisableCount_SuccessWithNoTotalCountResponse<T>(TestData<T> testData, bool fromContainerConfig)
         where T : class
     {
         // Arrange
-        var factory = SetupEntityApi(testData.RoutePrefix, testData.DataProvider
-            , containerApiBuilderSetup: b =>
-            {
-                b.ConfigureAllowQueryOptions(~AllowedQueryOptions.Count);
-            });
+        var factory = CreateFactory(testData, AllowedQueryOptions.Count, fromContainerConfig);
+
         var client = factory.CreateClient();
         var baseUrl = testData.Url;
 
@@ -42,12 +59,13 @@ public class QueryGlobalConfigTests : BaseTests, IAssemblyFixture<AppFactory>
     [GenericData(nameof(GetTestData), Constants.DefaultODataRoutePrefix)]
     [CombineFrom([0], nameof(TestUtils.GetEntityType))]
     [CombineFrom([1], nameof(TestUtils.PickRandomProperties), AdditionalArguments = [2])]
-    public async Task QueryDisableFilter_SuccessWithAllData<T>(TestData<T> testData, Type _, string[] properties)
+    [CombineRandomValue([true, false])]
+    public async Task QueryDisableFilter_SuccessWithAllData<T>(TestData<T> testData, Type _, string[] properties
+        , bool fromContainerConfig)
         where T : class
     {
         // Arrange
-        var factory = SetupEntityApi(testData.RoutePrefix, testData.DataProvider
-            , containerApiBuilderSetup: b => b.ConfigureAllowQueryOptions(~AllowedQueryOptions.Filter));
+        var factory = CreateFactory(testData, AllowedQueryOptions.Filter, fromContainerConfig);
 
         var baseUrl = testData.Url;
         var client = factory.CreateClient();
@@ -87,13 +105,13 @@ public class QueryGlobalConfigTests : BaseTests, IAssemblyFixture<AppFactory>
     [CombineFrom([0], nameof(TestUtils.GetEntityType))]
     [CombineFrom([1], nameof(TestUtils.PickRandomProperties), AdditionalArguments = [2])]
     [CombineRandomValue(typeof(bool), ValueCount = 2)]
+    [CombineRandomValue([true, false])]
     public async Task QueryDisableOrderBy_SuccessWithAllData<T>(TestData<T> testData, Type _
-        , string[] properties, bool isAsc)
+        , string[] properties, bool isAsc, bool fromContainerConfig)
         where T : class
     {
         // Arrange
-        var factory = SetupEntityApi(testData.RoutePrefix, testData.DataProvider
-                    , containerApiBuilderSetup: b => b.ConfigureAllowQueryOptions(~AllowedQueryOptions.OrderBy));
+        var factory = CreateFactory(testData, AllowedQueryOptions.OrderBy, fromContainerConfig);
 
         var baseUrl = testData.Url;
         var client = factory.CreateClient();
@@ -166,12 +184,12 @@ public class QueryGlobalConfigTests : BaseTests, IAssemblyFixture<AppFactory>
 
     [Theory]
     [GenericData(nameof(GetTestData), Constants.DefaultODataRoutePrefix)]
-    public async Task QueryDisableExpand_SuccessWithAllData<T>(TestData<T> testData)
+    [CombineRandomValue([true, false])]
+    public async Task QueryDisableExpand_SuccessWithAllData<T>(TestData<T> testData, bool fromContainerConfig)
         where T : class
     {
         // Arrange
-        var factory = SetupEntityApi(testData.RoutePrefix, testData.DataProvider
-            , containerApiBuilderSetup: o => o.ConfigureAllowQueryOptions(~AllowedQueryOptions.Expand));
+        var factory = CreateFactory(testData, AllowedQueryOptions.Expand, fromContainerConfig);
 
         var baseUrl = testData.Url;
         var client = factory.CreateClient();

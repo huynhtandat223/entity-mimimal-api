@@ -9,8 +9,6 @@ public class ContainerConfiguration
 {
     public AllowedQueryOptions AllowedQueryOptions { get; internal set; } = AllowedQueryOptions.All;
 
-    internal AttributeApiBuilder? AttributeApiBuilder { get; set; }
-
     public string RoutePrefix { get; internal set; } = string.Empty;
 
     public bool IsDefault { get; internal set; } = true;
@@ -30,4 +28,6 @@ public class ContainerConfiguration
     internal Action<RouteGroupBuilder>? ConfigureContainerRouteGroup { get; set; }
 
     internal IList<IApiFeature> ApiFeatures { get; } = new List<IApiFeature>();
+
+    public List<Type> CustomEntityImplementations { get; } = new List<Type>();
 }

@@ -25,6 +25,37 @@ public static class ServicesCollectionExtensions
         var sanitizeRoute = StringUtils.SanitizeRoute(defaultRoutePrefix);
         var builder = new ContainerApiBuilder(sanitizeRoute, services);
 
+        services.AddSingleton(builder.ContainerConfiguration);
+
+        var configurationInterface = typeof(IEntityApiConfiguration<>);
+
+        var configurationTypes = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(type => !type.IsInterface && !type.IsAbstract)
+            .Where(type => type.GetInterfaces()
+                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == configurationInterface))
+            .ToList();
+
+        foreach (var implementationType in configurationTypes)
+        {
+            // Assuming each implementation only implements one IEntityApiConfiguration<T>
+            var interfaceTypes = implementationType.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == configurationInterface);
+
+            foreach (var interfaceType in interfaceTypes)
+            {
+                var entityType = interfaceType.GetGenericArguments()[0];
+                builder.ContainerConfiguration.CustomEntityImplementations.Add(entityType);
+
+                services.AddSingleton(interfaceType, implementationType);
+
+                var apiConfiguration = typeof(EntityApiConfiguration<>)
+                    .MakeGenericType(entityType);
+
+                services.AddSingleton(typeof(EntityApiConfiguration), apiConfiguration);
+            }
+        }
+
         return builder;
     }
 
@@ -40,13 +71,16 @@ public static class ServicesCollectionExtensions
             var containerRegistrationContext
                 = new ContainerRegistrationContext(app.Services, containerConfiguration, typeResolver);
 
+            containerRegistrationContext.ContainerGroupRoute = app.MapGroup(containerConfiguration.RoutePrefix);
+            containerConfiguration.ConfigureContainerRouteGroup?.Invoke(containerRegistrationContext.ContainerGroupRoute);
+
             foreach (var feature in containerConfiguration.ApiFeatures)
             {
                 feature.Register(containerRegistrationContext);
             }
 
-            //var actionRouter = ActivatorUtilities.CreateInstance<Actions.Route>(app.Services)!;
-            //actionRouter.Register(containerRegistrationContext.ContainerGroupRoute, typeResolver.ActionAttributes);
+            var actionRouter = ActivatorUtilities.CreateInstance<Actions.Route>(app.Services)!;
+            actionRouter.Register(containerRegistrationContext.ContainerGroupRoute, typeResolver.ActionAttributes);
         }
 
         return app;

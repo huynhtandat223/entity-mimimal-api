@@ -73,7 +73,8 @@ public class BaseTests
     protected WebApplicationFactory<Program> SetupEntityApi(string routePrefix
         , DataProvider dataProvider
         , Action<ODataOptions>? odataOptionSetup = null
-        , Action<ContainerApiBuilder>? containerApiBuilderSetup = null)
+        , Action<ContainerApiBuilder>? containerApiBuilderSetup = null
+        , Action<EntityFrameworkPopuplationFeature<AppDbContext>>? efCoreFeatureSetup = null)
     {
         return _factory.WithWebHostBuilder(builder =>
         {
@@ -103,8 +104,13 @@ public class BaseTests
                 var entityApiBuilder = services
                     .AddEntityMinimalApi(routePrefix);
                 entityApiBuilder.ConfigureODataModelBuilder(b => b.EnableLowerCamelCase());
-                entityApiBuilder.PopuplateEntityFrameworkEntities<AppDbContext>();
-                entityApiBuilder.UseEntityAttributes();
+
+                var efCoreFeature = entityApiBuilder.PopuplateEntityFrameworkEntities<AppDbContext>();
+                if (efCoreFeatureSetup is not null)
+                {
+                    efCoreFeatureSetup(efCoreFeature);
+                }
+
                 containerApiBuilderSetup?.Invoke(entityApiBuilder);
 
                 if (odataOptionSetup is not null)

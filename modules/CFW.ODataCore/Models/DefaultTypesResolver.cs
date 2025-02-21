@@ -10,8 +10,6 @@ public interface ITypesResolver
 {
     public IList<Type> CachedTypes { get; }
 
-    public IEnumerable<EntityAttribute> DbEntityAttributes { get; }
-
     public IEnumerable<EntityApiConfiguration> ConfiguredEntities { get; }
 
     public IEnumerable<EntityActionAttribute> EntityActionAttributes { get; }
@@ -41,8 +39,6 @@ public class DefaultTypesResolver : ITypesResolver
         .SelectMany(x => x.GetExportedTypes())
         .Where(x => x.GetCustomAttributes<BaseRoutingAttribute>() is not null)
         .ToList();
-
-    public IEnumerable<EntityAttribute> DbEntityAttributes => GetDbEntityAttributes();
 
     public IEnumerable<EntityApiConfiguration> ConfiguredEntities => GetConfiguredEntities();
 
@@ -104,47 +100,31 @@ public class DefaultTypesResolver : ITypesResolver
         return entityActionAttributes;
     }
 
-    private IEnumerable<EntityAttribute> GetDbEntityAttributes()
-    {
-        if (_containerConfiguration.AttributeApiBuilder is null)
-            return new List<EntityAttribute>();
-
-        var dbEntityAttributes = CachedTypes
-            .Where(x => x.GetCustomAttributes<EntityAttribute>() is not null)
-            .SelectMany(x => x.GetCustomAttributes<EntityAttribute>().Select(a => new { TargetType = x, Attribute = a }))
-            .Aggregate(new List<EntityAttribute>(), (acc, x) =>
-            {
-                x.Attribute.TargetType = x.TargetType;
-                acc.Add(x.Attribute);
-                return acc;
-            });
-
-        return dbEntityAttributes;
-    }
-
     private IEnumerable<EntityApiConfiguration> GetConfiguredEntities()
     {
-        var entityApiBuilders = CachedTypes
-            .Where(x => x.GetCustomAttributes<EntityConfigurationAttribute>() is not null)
-            .SelectMany(x => x.GetCustomAttributes<EntityConfigurationAttribute>()
-                .Select(a => new { TargetType = x, Attribute = a }))
-            .Aggregate(new List<EntityApiConfiguration>(), (acc, x) =>
-            {
-                var interfaceType = x.TargetType.GetInterfaces()
-                    .SingleOrDefault(i => i == typeof(IEntityApiConfiguration));
+        return new List<EntityApiConfiguration>();
 
-                if (interfaceType is null)
-                    throw new InvalidOperationException("Entity configuration must implement IEntityApiConfiguration");
+        //var entityApiBuilders = CachedTypes
+        //    .Where(x => x.GetCustomAttributes<EntityConfigurationAttribute>() is not null)
+        //    .SelectMany(x => x.GetCustomAttributes<EntityConfigurationAttribute>()
+        //        .Select(a => new { TargetType = x, Attribute = a }))
+        //    .Aggregate(new List<EntityApiConfiguration>(), (acc, x) =>
+        //    {
+        //        var interfaceType = x.TargetType.GetInterfaces()
+        //            .SingleOrDefault(i => i == typeof(IEntityApiConfiguration));
 
-                var instance = (IEntityApiConfiguration)ActivatorUtilities
-                    .CreateInstance(_serviceProvider, x.TargetType);
-                var entityBuilder = new EntityApiContextBuilder();
-                instance.Configure(entityBuilder);
+        //        if (interfaceType is null)
+        //            throw new InvalidOperationException("Entity configuration must implement IEntityApiConfiguration");
 
-                acc.AddRange(entityBuilder.EntityApiConfigurations);
-                return acc;
-            });
+        //        var instance = (IEntityApiConfiguration)ActivatorUtilities
+        //            .CreateInstance(_serviceProvider, x.TargetType);
+        //        var entityBuilder = new EntityApiContextBuilder();
+        //        instance.Configure(entityBuilder);
 
-        return entityApiBuilders;
+        //        acc.AddRange(entityBuilder.EntityApiConfigurations);
+        //        return acc;
+        //    });
+
+        //return entityApiBuilders;
     }
 }

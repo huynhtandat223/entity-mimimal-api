@@ -2,7 +2,6 @@ global using CFW.EntityApi.Attributes;
 
 using CFW.EntityApi;
 using CFW.EntityApi.Models;
-using CFW.EntityApi.Models.Builders;
 using CFW.EntityApi.Queries;
 using CFW.EntityApi.TestApi;
 using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
@@ -13,9 +12,6 @@ using Scalar.AspNetCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
-
-//TODO: testing purpose, enhance this
-builder.Services.AddSingleton<Action<EntityApiContextBuilder>>(b => { });
 
 builder.Services.AddOpenApi(o =>
 {

@@ -1,4 +1,5 @@
-﻿global using CFW.Core.Results;
+﻿global using CFW.Core.EfCoreExtensions;
+global using CFW.Core.Results;
 global using CFW.Core.Utils;
 global using CFW.CoreTestings.DataGenerations;
 global using CFW.EntityApi.TestApi.Infrastructures.UnitTests;

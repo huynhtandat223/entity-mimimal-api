@@ -89,6 +89,23 @@ public class DefaultTypesResolver : ITypesResolver
                     (i.IsGenericType && operationTypes.Contains(i.GetGenericTypeDefinition())));
 
                 if (interfaceType is null)
+                {
+                    Type? baseType = x.TargetType.BaseType;
+                    while (baseType is not null && baseType != typeof(object))
+                    {
+                        interfaceType = baseType.GetInterfaces()
+                            .SingleOrDefault(i => i == typeof(IOperationHandler) ||
+                                                  (i.IsGenericType && operationTypes.Contains(i.GetGenericTypeDefinition())));
+
+                        if (interfaceType != null)
+                        {
+                            break;
+                        }
+                        baseType = baseType.BaseType;
+                    }
+                }
+
+                if (interfaceType is null)
                     throw new InvalidOperationException("Entity action must implement IOperationHandler");
 
                 x.Attribute.TargetType = x.TargetType;

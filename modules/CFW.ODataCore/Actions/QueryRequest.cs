@@ -15,20 +15,34 @@ public class QueryRequest<TRequest>
         var jsonOptions = context.RequestServices.GetRequiredService<IOptions<JsonOptions>>().Value;
         var result = new QueryRequest<TRequest>();
 
-        if (!request.QueryString.HasValue)
+        // Create a dictionary to hold both query string and route values
+        var allValues = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+        // Add query string values, if any
+        if (request.QueryString.HasValue)
         {
-            result.QueryModel = Activator.CreateInstance<TRequest>();
-            return new ValueTask<QueryRequest<TRequest>>(result);
+            var queryDictionary = HttpUtility.ParseQueryString(request.QueryString.Value);
+            foreach (var key in queryDictionary.AllKeys)
+            {
+                if (key != null)
+                    allValues[key] = queryDictionary[key];
+            }
         }
 
-        var dict = HttpUtility.ParseQueryString(request.QueryString.Value);
-        string json = JsonSerializer.Serialize(dict.Cast<string>().ToDictionary(k => k, v => dict[v]));
+        // Add route values; they are available in Request.RouteValues
+        foreach (var routeValue in request.RouteValues)
+        {
+            if (routeValue.Value != null)
+                allValues[routeValue.Key] = routeValue.Value.ToString();
+        }
+
+        // Serialize the merged dictionary to JSON and deserialize to your TRequest model
+        string json = JsonSerializer.Serialize(allValues);
         var model = JsonSerializer.Deserialize<TRequest>(json, jsonOptions.JsonSerializerOptions);
 
         result.QueryModel = model;
         return new ValueTask<QueryRequest<TRequest>>(result);
     }
-
 }
 
 

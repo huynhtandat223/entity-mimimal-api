@@ -1,5 +1,6 @@
 ﻿using CFW.EntityApi.Models.Builders;
 using CFW.EntityApi.TestApi.Features.Entities.ViewModels;
+using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
 
 namespace CFW.EntityApi.TestApi.Features.Entities;
 
@@ -9,16 +10,12 @@ public class ApiConfiguration : IEntityApiConfiguration<EntityViewModel>
     {
         builder
             .UseName("entities")
-            .UseQuery<DefaultDbContext>(db => db.Model.GetEntityTypes().Select(x => new
+            .UseQuery<AppDbContext>(db => db.Model.GetEntityTypes().Select(x => new EntityViewModel
             {
-                x.Name,
-                x.ClrType.FullName,
-                Properties = x.GetProperties().Select(p => new
-                {
-                    p.Name,
-                    p.ClrType.FullName
-                })
-            }).AsQueryable());
+                Id = x.ClrType.FullName!,
+                Name = x.ClrType.Name
+
+            }).ToList().AsQueryable());
 
         return Task.CompletedTask;
     }

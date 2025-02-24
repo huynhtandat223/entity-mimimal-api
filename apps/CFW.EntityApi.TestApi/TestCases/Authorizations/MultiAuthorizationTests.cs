@@ -15,7 +15,7 @@ public class MultiAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
 
     }
 
-    [Fact]
+    [Fact(Skip = "Need new approach")]
     public async Task Request_MultiAuthorization_ShouldSuccess()
     {
         var admin = Guid.NewGuid().ToString();

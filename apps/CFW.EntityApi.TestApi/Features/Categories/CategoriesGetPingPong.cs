@@ -39,3 +39,58 @@ public class CategoriesGetPingPong
         }
     }
 }
+
+public class CategoriesPostPingPong
+{
+    [EntityAction($"categories/postPingPong", Method = EntityApi.Models.ApiMethod.Post)]
+    public class Handler : CategoriesGetPingPong.Handler
+    {
+        public Handler(List<object> requestObjects) : base(requestObjects)
+        {
+        }
+    }
+}
+
+public class CategoriesPingPong
+{
+    [EntityAction($"categories/pingPong")]
+    public class Handler : CategoriesGetPingPong.Handler
+    {
+        public Handler(List<object> requestObjects) : base(requestObjects)
+        {
+        }
+    }
+}
+
+public class CategoriesPutPingPong
+{
+    [EntityAction($"categories/putPingPong", Method = EntityApi.Models.ApiMethod.Put)]
+    public class Handler : CategoriesGetPingPong.Handler
+    {
+        public Handler(List<object> requestObjects) : base(requestObjects)
+        {
+        }
+    }
+}
+
+public class CategoriesPatchPingPong
+{
+    [EntityAction($"categories/patchPingPong", Method = EntityApi.Models.ApiMethod.Patch)]
+    public class Handler : CategoriesGetPingPong.Handler
+    {
+        public Handler(List<object> requestObjects) : base(requestObjects)
+        {
+        }
+    }
+}
+
+public class CategoriesDeletePingPong
+{
+    [EntityAction($"categories/deletePingPong", Method = EntityApi.Models.ApiMethod.Delete)]
+    public class Handler : CategoriesGetPingPong.Handler
+    {
+        public Handler(List<object> requestObjects) : base(requestObjects)
+        {
+        }
+    }
+}

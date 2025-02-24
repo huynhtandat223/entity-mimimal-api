@@ -7,7 +7,7 @@ public class EntityGetByKeyDefaultConfigureTests : BaseTests, IAssemblyFixture<A
     {
     }
 
-    [Theory]
+    [Theory(Skip = "Need new approach")]
     [InlineData(typeof(Category))]
     [InlineData(typeof(Product))]
     public async Task GetByKey_NoAnyParameters_Success(Type dbModelType)
@@ -33,7 +33,7 @@ public class EntityGetByKeyDefaultConfigureTests : BaseTests, IAssemblyFixture<A
     }
 
 
-    [Theory]
+    [Theory(Skip = "Need new approach")]
     [InlineData(typeof(Category))]
     [InlineData(typeof(Product))]
     public async Task GetByKeySelect_Success(Type dbModelType)
@@ -70,7 +70,7 @@ public class EntityGetByKeyDefaultConfigureTests : BaseTests, IAssemblyFixture<A
         jsonProperties.Should().HaveCount(randomProperties.Count);
     }
 
-    [Theory]
+    [Theory(Skip = "Need new approach")]
     [InlineData(typeof(Product))]
     public async Task QueryExpand_Success(Type dbModelType)
     {

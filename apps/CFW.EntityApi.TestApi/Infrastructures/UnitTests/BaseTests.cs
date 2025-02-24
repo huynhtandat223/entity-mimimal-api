@@ -2,6 +2,7 @@
 using CFW.CoreTestings.Logging;
 using CFW.EntityApi.Models.Builders;
 using CFW.EntityApi.Registrators;
+using CFW.EntityApi.TestApi.Features.Entities.ViewModels;
 using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OData;
@@ -209,6 +210,25 @@ public class BaseTests
         };
 
         yield return categoryData;
+
+        yield return new TestData<Product>
+        {
+            DataProvider = DataProvider.Sqlite,
+            Url = $"{routePrefix}/products",
+            RoutePrefix = routePrefix
+        };
+    }
+
+    public static IEnumerable<TestData> GetViewModelTestData(string routePrefix)
+    {
+        var entityData = new TestData<EntityViewModel>
+        {
+            Url = $"{routePrefix}/entities",
+            RoutePrefix = routePrefix,
+            DataProvider = DataProvider.Sqlite
+        };
+
+        yield return entityData;
 
         yield return new TestData<Product>
         {

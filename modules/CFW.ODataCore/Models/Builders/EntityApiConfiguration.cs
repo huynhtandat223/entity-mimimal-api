@@ -14,6 +14,7 @@ using System.Text.Json.Serialization;
 namespace CFW.EntityApi.Models.Builders;
 
 public class EntityApiConfigurationBuilder<TEntity>
+    where TEntity : class
 {
     private readonly EntityApiConfiguration<TEntity> _entityApiConfiguration;
     internal EntityApiConfigurationBuilder(EntityApiConfiguration<TEntity> entityApiConfiguration)
@@ -74,6 +75,7 @@ public class EntityApiConfigurationBuilder<TEntity>
 }
 
 public interface IEntityApiConfiguration<TEntity>
+    where TEntity : class
 {
     Task Configure(EntityApiConfigurationBuilder<TEntity> builder);
 }
@@ -111,6 +113,7 @@ public abstract class EntityApiConfiguration
 }
 
 public class EntityApiConfiguration<TEntity> : EntityApiConfiguration
+    where TEntity : class
 {
     public EntityApiConfiguration() { }
 
@@ -120,9 +123,92 @@ public class EntityApiConfiguration<TEntity> : EntityApiConfiguration
         var builder = new EntityApiConfigurationBuilder<TEntity>(this);
         entityApiConfiguration.Configure(builder);
     }
+
+    public override Task RegisterRoutes(ContainerMemberRegistrationContext registrationContext)
+    {
+        var entityGroupBuider = registrationContext.MemberRouteGroup;
+        var containerRegistrationContext = registrationContext.ContainerRegistrationContext;
+
+        if (CreationFactory is not null)
+        {
+            entityGroupBuider.MapPost("/", async (EntityDelta<TEntity> delta
+            , [FromServices] IServiceProvider sp
+            , CancellationToken cancellationToken) =>
+            {
+                var result = await CreationFactory(sp, delta);
+                return result.ToResults();
+            });
+        }
+
+        if (QueryFactory is not null)
+        {
+            entityGroupBuider.MapGet("/", async (ODataOutputFormatter outputFormatter
+            , HttpContext httpContext
+            , ODataOutputFormatter formatter
+            , CancellationToken cancellationToken) =>
+            {
+                var odataFeature = registrationContext.ODataFeature;
+                if (odataFeature is null)
+                {
+                    odataFeature = registrationContext
+                    .CreateODataFeature<TEntity>(httpContext.RequestServices
+                        , null, null);
+                }
+                httpContext.Features.Set(odataFeature);
+                var queryBuilder = new QueryBuilder(httpContext.Request.Query);
+                var maxTop = registrationContext.ODataOptions.QueryConfigurations.MaxTop;
+                //Maybe $top always support by Odata
+                var availableTop = new string[] { "$top", "top" };
+                var topQuery = httpContext.Request.Query.SingleOrDefault(x => availableTop.Contains(x.Key.ToLower().Trim()));
+                if (topQuery.Key.IsNullOrWhiteSpace())
+                {
+                    queryBuilder.Add("$top", maxTop!.Value.ToString());
+                }
+                else
+                {
+                    if (!int.TryParse(topQuery.Value, out var topValue))
+                    {
+                        queryBuilder.Add("$top", maxTop!.Value.ToString());
+                    }
+                    else if (topValue > maxTop!.Value)
+                    {
+                        queryBuilder.Add("$top", maxTop!.Value.ToString());
+                    }
+                }
+                httpContext.Request.QueryString = queryBuilder.ToQueryString();
+                var odataQueryContext = new ODataQueryContext(odataFeature.Model, typeof(TEntity), odataFeature.Path);
+                var options = new ODataQueryOptions<TEntity>(odataQueryContext, httpContext.Request);
+                var queryResult = await QueryFactory(httpContext.RequestServices, options);
+                var result = queryResult.Data!;
+                var formatterContext = new OutputFormatterWriteContext(httpContext,
+                    (stream, encoding) => new StreamWriter(stream, encoding),
+                    result.GetType() ?? typeof(object), result)
+                {
+                    ContentType = "application/json;odata.metadata=none",
+                };
+                await formatter.WriteAsync(formatterContext);
+            }).WithMetadata(registrationContext);
+        }
+
+        if (DeletionExecutor is not null)
+        {
+            entityGroupBuider.MapDelete("/{key}", async (TEntity key
+                , [FromServices] IServiceProvider sp
+                , CancellationToken cancellationToken) =>
+            {
+                var result = await DeletionExecutor(sp, key!);
+                return result.ToResults();
+            });
+        }
+
+        return Task.CompletedTask;
+    }
+
 }
 
 public class EntityApiConfiguration<TDbContext, TEntity> : EntityApiConfiguration<TEntity>
+    where TDbContext : DbContext
+    where TEntity : class
 {
     public EntityApiConfiguration(IEntityType dbEntityType)
     {

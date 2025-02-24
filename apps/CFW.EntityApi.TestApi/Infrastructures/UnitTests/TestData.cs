@@ -1,4 +1,6 @@
-﻿namespace CFW.EntityApi.TestApi.Infrastructures.UnitTests;
+﻿using CFW.EntityApi.Models;
+
+namespace CFW.EntityApi.TestApi.Infrastructures.UnitTests;
 
 public record class TestData
 {
@@ -19,4 +21,6 @@ public record class TestData<T> : TestData
 public class TestAction<TRequest, TResponse>
 {
     public string ActionRoute { get; set; } = string.Empty;
+
+    public ApiMethod Method { get; set; } = ApiMethod.Post;
 }

@@ -47,12 +47,12 @@ public static class ServicesCollectionExtensions
                 var entityType = interfaceType.GetGenericArguments()[0];
                 builder.ContainerConfiguration.CustomEntityImplementations.Add(entityType);
 
-                services.AddSingleton(interfaceType, implementationType);
+                services.TryAddSingleton(interfaceType, implementationType);
 
                 var apiConfiguration = typeof(EntityApiConfiguration<>)
                     .MakeGenericType(entityType);
 
-                services.AddSingleton(typeof(EntityApiConfiguration), apiConfiguration);
+                services.TryAddSingleton(typeof(EntityApiConfiguration), apiConfiguration);
             }
         }
 

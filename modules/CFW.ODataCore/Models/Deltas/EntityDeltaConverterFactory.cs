@@ -28,15 +28,12 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
     public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var argType = typeToConvert.GetGenericArguments()[0];
-
-        var conveterType = typeof(EntityDeltaConverter<>).MakeGenericType(argType);
-
         if (argType == EntityApiConfiguration.EntityType)
         {
-            var converter = Activator.CreateInstance(conveterType, EntityApiConfiguration.EntityType) as JsonConverter;
-            return converter!;
+            return new EntityDeltaConverter<TEntity>(EntityApiConfiguration.DbEntityType!);
         }
 
+        var conveterType = typeof(EntityDeltaConverter<>).MakeGenericType(argType);
         var navigations = EntityApiConfiguration.DbEntityType!.GetNavigations();
         var navigation = navigations.FirstOrDefault(x => x.ClrType == argType);
         if (navigation != null)

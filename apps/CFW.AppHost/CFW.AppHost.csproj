@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CFW.Automation\CFW.Automation.csproj" />
     <ProjectReference Include="..\CFW.EntityApi.TestApi\CFW.EntityApi.TestApi.csproj" />
   </ItemGroup>
 

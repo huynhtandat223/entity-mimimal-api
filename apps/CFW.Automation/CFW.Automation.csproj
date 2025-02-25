@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.1" />
+	<PackageReference Include="Microsoft.Playwright.Xunit" Version="1.50.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\CFW.ODataCore\CFW.EntityApi.csproj" />
+    <ProjectReference Include="..\CFW.ServiceDefaults\CFW.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

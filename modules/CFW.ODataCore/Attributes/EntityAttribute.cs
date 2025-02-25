@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.OData.Query;
 namespace CFW.EntityApi.Attributes;
 
 
-[Obsolete("Are we need this????")]
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class EntityAttribute(string? name = null) : BaseRoutingAttribute
 {

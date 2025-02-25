@@ -20,3 +20,4 @@ public class ApiConfiguration : IEntityApiConfiguration<EntityViewModel>
         return Task.CompletedTask;
     }
 }
+

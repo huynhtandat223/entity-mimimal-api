@@ -36,7 +36,5 @@ public static class WebApplicationExtensions
             //supperAdminUser.TenantRoles.Add(new TenantRole(systemTenant.Id, supperAdminRole));
             //await db.SaveChangesAsync();
         }
-
-
     }
 }

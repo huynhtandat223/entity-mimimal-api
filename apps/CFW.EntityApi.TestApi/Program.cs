@@ -2,7 +2,6 @@ global using CFW.EntityApi.Attributes;
 
 using CFW.EntityApi;
 using CFW.EntityApi.Models;
-using CFW.EntityApi.Queries;
 using CFW.EntityApi.TestApi;
 using CFW.EntityApi.TestApi.Infrastructures.DbContexts;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -12,11 +11,6 @@ using Scalar.AspNetCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddOpenApi(o =>
-{
-    o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
-});
 
 builder.Services.AddOptions<DbContextSetting>()
     .Bind(builder.Configuration.GetSection(nameof(DbContextSetting)));

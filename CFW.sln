@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.ServiceDefaults", "apps
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.EntityApi.TestApi", "apps\CFW.EntityApi.TestApi\CFW.EntityApi.TestApi.csproj", "{F7DBCFBB-EB5F-4C29-BA32-95358C89381A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.Automation", "apps\CFW.Automation\CFW.Automation.csproj", "{D37AFDDF-69F7-441B-ADD8-896E0BC22CE2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{F7DBCFBB-EB5F-4C29-BA32-95358C89381A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F7DBCFBB-EB5F-4C29-BA32-95358C89381A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F7DBCFBB-EB5F-4C29-BA32-95358C89381A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D37AFDDF-69F7-441B-ADD8-896E0BC22CE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D37AFDDF-69F7-441B-ADD8-896E0BC22CE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D37AFDDF-69F7-441B-ADD8-896E0BC22CE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D37AFDDF-69F7-441B-ADD8-896E0BC22CE2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,5 +101,6 @@ Global
 		{896172FF-3D9F-4B2A-BE61-EA4E251145B3} = {612884DF-C8A4-428F-90F5-33A06A1E979E}
 		{FC77A878-3D56-48E1-962A-D9C7EDBB91AB} = {612884DF-C8A4-428F-90F5-33A06A1E979E}
 		{F7DBCFBB-EB5F-4C29-BA32-95358C89381A} = {612884DF-C8A4-428F-90F5-33A06A1E979E}
+		{D37AFDDF-69F7-441B-ADD8-896E0BC22CE2} = {612884DF-C8A4-428F-90F5-33A06A1E979E}
 	EndGlobalSection
 EndGlobal

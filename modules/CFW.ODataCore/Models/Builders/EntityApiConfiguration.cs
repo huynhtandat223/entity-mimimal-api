@@ -74,12 +74,6 @@ public class EntityApiConfigurationBuilder<TEntity>
     }
 }
 
-public interface IEntityApiConfiguration<TEntity>
-    where TEntity : class
-{
-    Task Configure(EntityApiConfigurationBuilder<TEntity> builder);
-}
-
 public abstract class EntityApiConfiguration
 {
     internal Type EntityType { get; set; } = null!;

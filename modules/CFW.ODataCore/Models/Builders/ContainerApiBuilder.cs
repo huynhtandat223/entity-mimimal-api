@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.OData.ModelBuilder;
 
@@ -10,9 +11,11 @@ namespace CFW.EntityApi.Models.Builders;
 public class ContainerApiBuilder
 {
     private readonly ContainerConfiguration _containerConfiguration = new ContainerConfiguration();
+    private readonly IServiceCollection _services;
 
     public ContainerApiBuilder(string defaultRoutePrefix, IServiceCollection services)
     {
+        _services = services;
         _containerConfiguration.RoutePrefix = defaultRoutePrefix;
 
         services.AddOptions<ODataOptions>(_containerConfiguration.RoutePrefix);
@@ -64,9 +67,21 @@ public class ContainerApiBuilder
     }
 
     public EntityFrameworkPopuplationFeature<TDbContext> PopuplateEntityFrameworkEntities<TDbContext>(
+        Action<DbContextOptionsBuilder>? optionBuider = null,
         Func<IEntityType, bool>? entitiesSelector = null)
         where TDbContext : DbContext
     {
+        if (optionBuider is not null)
+        {
+            _services.AddDbContext<TDbContext>(options =>
+            {
+                options.EnableSensitiveDataLogging()
+                   .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TDbContext>>();
+
+                optionBuider(options);
+            });
+        }
+
         var feature = new EntityFrameworkPopuplationFeature<TDbContext>(_containerConfiguration);
         feature.EntitiesSelector = entitiesSelector ?? (x => true);
         return feature;

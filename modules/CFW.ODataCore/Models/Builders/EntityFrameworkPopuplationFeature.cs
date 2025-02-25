@@ -74,10 +74,12 @@ public class EntityFrameworkPopuplationFeature<TDbContext> : IApiFeature
         var entityActions = containerRegistrationContext.TypeResolver.EntityActionAttributes;
         var customEntityConfigurations = containerRegistrationContext.ContainerConfiguration.CustomEntityImplementations;
 
+        var customTypes = containerRegistrationContext.ContainerConfiguration.CustomEntityImplementations;
         var entityTypes = db.Model.GetEntityTypes()
             .Where(x => x.FindPrimaryKey() is not null
                 && x.FindPrimaryKey()!.Properties.Count == 1) //only support single key entity
             .Where(EntitiesSelector)
+            .Where(x => !customTypes.Contains(x.ClrType))
             .ToList();
 
         var configurations = scope.ServiceProvider.GetServices<EntityApiConfiguration>();

@@ -46,7 +46,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\modules\CFW.Core.EfCoreExtensions\CFW.Core.EfCoreExtensions.csproj" />
     <ProjectReference Include="..\..\modules\CFW.Core\CFW.Core.csproj" />
-    <ProjectReference Include="..\..\modules\CFW.ODataCore\CFW.EntityApi.csproj" />
+    <ProjectReference Include="..\..\modules\CFW.EntityApi\CFW.EntityApi.csproj" />
     <ProjectReference Include="..\..\tests\CFW.CoreTestings\CFW.CoreTestings.csproj" />
     <ProjectReference Include="..\CFW.ServiceDefaults\CFW.ServiceDefaults.csproj" />
   </ItemGroup>

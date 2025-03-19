@@ -106,6 +106,7 @@ public static class ServicesCollectionExtensions
 
     public static WebApplication UseEntityMinimalApi(this WebApplication app)
     {
+
         var containerConfigurations = app.Services.GetServices<ContainerConfiguration>();
 
         foreach (var containerConfiguration in containerConfigurations)
@@ -128,9 +129,8 @@ public static class ServicesCollectionExtensions
             actionRouter.Register(containerRegistrationContext.ContainerGroupRoute, typeResolver.ActionAttributes);
         }
 
-        app.MapOpenApi();
-
         //https://github.com/dotnet/aspnetcore/issues/57332#issuecomment-2480939916
+        app.MapOpenApi();
         app.MapScalarApiReference(_ => _.Servers = []);
 
 

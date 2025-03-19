@@ -1,7 +1,7 @@
 ﻿using CFW.Core.Entities;
-using CFW.Identity.Users.Models;
+using CFW.ODataCore.Users.Models;
 
-namespace CFW.Identity.Tenants.Models;
+namespace CFW.ODataCore.Tenants.Models;
 
 public class Tenant : IEntity<Guid>
 {

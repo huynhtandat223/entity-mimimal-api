@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CFW.Automation\CFW.Automation.csproj" />
     <ProjectReference Include="..\CFW.EntityApi.TestApi\CFW.EntityApi.TestApi.csproj" />
+    <ProjectReference Include="..\CFW.ODataCore\CFW.ODataCore.csproj" />
   </ItemGroup>
 
   <Target Name="RestoreNpm" BeforeTargets="Build" Condition=" '$(DesignTimeBuild)' != 'true' ">

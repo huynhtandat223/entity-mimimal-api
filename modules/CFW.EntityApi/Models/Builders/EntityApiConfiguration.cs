@@ -115,6 +115,7 @@ public class EntityApiConfiguration<TEntity> : EntityApiConfiguration
     {
         EntityType = typeof(TEntity);
         var builder = new EntityApiConfigurationBuilder<TEntity>(this);
+
         entityApiConfiguration.Configure(builder);
     }
 

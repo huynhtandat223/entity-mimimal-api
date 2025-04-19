@@ -1,8 +1,7 @@
 using CFW.EntityApi;
 using CFW.EntityApi.Models;
 using CFW.ODataCore;
-using CFW.ODataCore.Tenants.Models;
-using CFW.ODataCore.Users.Models;
+using CFW.ODataCore.Features.Identity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;

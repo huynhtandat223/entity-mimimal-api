@@ -1,4 +1,4 @@
-﻿using CFW.ODataCore.Users.Models;
+﻿using CFW.ODataCore.Features.Identity.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 

@@ -21,6 +21,14 @@ export default defineConfig({
       // fix loading all icon chunks in dev mode
       // https://github.com/tabler/tabler-icons/issues/1233
       '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
+
+      // Ensure React is deduplicated
+      react: path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
     },
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    force: true,
   },
 })

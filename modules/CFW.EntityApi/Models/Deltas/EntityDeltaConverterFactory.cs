@@ -1,5 +1,6 @@
 ﻿using CFW.EntityApi.Models.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -10,6 +11,8 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
     where TEntity : class
 {
     public EntityApiConfiguration<TDbContext, TEntity, TKey> EntityApiConfiguration { get; }
+
+    private List<IEntityType> _navigations = new List<IEntityType>();
 
     public EntityDeltaConverterFactory(EntityApiConfiguration<TDbContext, TEntity, TKey> entityApiConfiguration)
     {
@@ -28,7 +31,7 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
     public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var argType = typeToConvert.GetGenericArguments()[0];
-        if (argType == EntityApiConfiguration.EntityType)
+        if (argType == typeof(TEntity))
         {
             return new EntityDeltaConverter<TEntity>(EntityApiConfiguration.DbEntityType!);
         }
@@ -38,6 +41,9 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
         var navigation = navigations.FirstOrDefault(x => x.ClrType == argType);
         if (navigation != null)
         {
+            if (!_navigations.Contains(navigation.ForeignKey.PrincipalEntityType))
+                _navigations.Add(navigation.ForeignKey.PrincipalEntityType);
+
             var converter = Activator.CreateInstance(conveterType, navigation.ForeignKey.PrincipalEntityType) as JsonConverter;
             return converter!;
         }
@@ -48,6 +54,24 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
         {
             var converter = Activator.CreateInstance(conveterType, complexProperty) as JsonConverter;
             return converter!;
+        }
+
+        if (_navigations.Any())
+        {
+            foreach (var navigationEntity in _navigations)
+            {
+                var childNavigations = navigationEntity.GetNavigations();
+                var childNavigation = childNavigations
+                    .FirstOrDefault(x => x.ForeignKey.DeclaringEntityType.ClrType == argType);
+                if (childNavigation != null)
+                {
+                    if (!_navigations.Contains(childNavigation.ForeignKey.DeclaringEntityType))
+                        _navigations.Add(childNavigation.ForeignKey.DeclaringEntityType);
+
+                    var converter = Activator.CreateInstance(conveterType, childNavigation.ForeignKey.DeclaringEntityType) as JsonConverter;
+                    return converter!;
+                }
+            }
         }
 
         throw new NotImplementedException();

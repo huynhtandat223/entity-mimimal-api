@@ -30,4 +30,6 @@ public class ContainerConfiguration
     internal IList<IApiFeature> ApiFeatures { get; } = new List<IApiFeature>();
 
     public List<Type> CustomEntityImplementations { get; } = new List<Type>();
+
+    public Func<IServiceProvider, IEnumerable<EntityApiConfiguration>>? ApiConfigurationsFunc { get; set; }
 }

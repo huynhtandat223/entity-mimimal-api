@@ -20,6 +20,11 @@ public class EntityDelta<TEntity> : EntityDelta
         var customizedOptions = new JsonSerializerOptions(jsonOptions.SerializerOptions);
         var factory = entityApiConfiguration.GetDeltaConverterFactory();
 
+        if (factory is null && entityApiConfiguration.JsonConverterFactoryFunc is not null)
+        {
+            factory = entityApiConfiguration.JsonConverterFactoryFunc(context.RequestServices);
+        }
+
         customizedOptions.Converters.Add(factory!);
 
         var delta = await JsonSerializer.DeserializeAsync<EntityDelta<TEntity>>(context.Request.Body

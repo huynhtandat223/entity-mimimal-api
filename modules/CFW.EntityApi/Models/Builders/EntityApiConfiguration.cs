@@ -28,33 +28,9 @@ public class EntityApiConfigurationBuilder<TEntity>
         return this;
     }
 
-    public EntityApiConfigurationBuilder<TEntity> UseQueryAsync<TService>(Func<TService
-        , ODataQueryOptions<TEntity>, Task<IQueryable>> queryFunc)
-        where TService : class
+    public EntityApiConfigurationBuilder<TEntity> UseProperties(IEnumerable<ApiProperty> apiProperties)
     {
-        _entityApiConfiguration.QueryFactory = async (s, options) =>
-        {
-            var service = s.GetRequiredService<TService>()!;
-            var entityOptions = (ODataQueryOptions<TEntity>)options;
-            var query = await queryFunc(service, entityOptions);
-            return query.Success();
-        };
-        return this;
-    }
-
-    public EntityApiConfigurationBuilder<TEntity> UseQuery<TService>(Func<TService
-        , ODataQueryOptions<TEntity>, IQueryable> queryFunc)
-        where TService : class
-    {
-        _entityApiConfiguration.QueryFactory = (s, options) =>
-        {
-            var service = s.GetRequiredService<TService>()!;
-            var entityOptions = (ODataQueryOptions<TEntity>)options;
-            var query = queryFunc(service, entityOptions);
-            var result = query.Success();
-
-            return Task.FromResult(result);
-        };
+        _entityApiConfiguration.Properties = apiProperties;
         return this;
     }
 
@@ -72,6 +48,34 @@ public class EntityApiConfigurationBuilder<TEntity>
         };
         return this;
     }
+
+    public EntityApiConfiguration EntityApiConfiguration => _entityApiConfiguration;
+
+    public EntityApiConfigurationBuilder<TEntity> UseCreation<TDbContext, TKey>(Func<IServiceProvider,
+        EntityDelta, Task<Result>> func)
+        where TDbContext : DbContext
+    {
+        _entityApiConfiguration.CreationFactory = func;
+
+        _entityApiConfiguration.JsonConverterFactoryFunc = s =>
+        {
+            var dbContext = s.GetRequiredService<TDbContext>();
+            var entityType = dbContext.Model.FindEntityType(typeof(TEntity));
+            if (entityType is null)
+            {
+                throw new InvalidOperationException();
+            }
+            var primaryKey = entityType.FindPrimaryKey();
+            if (primaryKey is null)
+            {
+                throw new InvalidOperationException();
+            }
+            var newApiConfiguration = new EntityApiConfiguration<TDbContext, TEntity, TKey>(entityType, primaryKey.Properties.First());
+            var converterFactory = new EntityDeltaConverterFactory<TDbContext, TEntity, TKey>(newApiConfiguration);
+            return converterFactory;
+        };
+        return this;
+    }
 }
 
 public abstract class EntityApiConfiguration
@@ -80,7 +84,7 @@ public abstract class EntityApiConfiguration
 
     internal AllowedQueryOptions? AllowedQueryOptions { get; set; }
 
-    internal string? RouteName { get; set; }
+    public string? RouteName { get; set; }
 
     internal Func<IServiceProvider, EntityDelta, Task<Result>>? CreationFactory { get; set; }
 
@@ -88,13 +92,18 @@ public abstract class EntityApiConfiguration
 
     internal Func<IServiceProvider, object, Task<Result>>? DeletionExecutor { get; set; }
 
+    [Obsolete("Is we need it")]
     public Type? DbContextType { get; internal set; }
+
+    public IEnumerable<ApiProperty> Properties { get; set; }
 
     public virtual Task RegisterRoutes(ContainerMemberRegistrationContext registrationContext) => Task.CompletedTask;
 
-    public virtual Task Initialize(IServiceProvider serviceProvider) => Task.CompletedTask;
+    [Obsolete]
+    public virtual JsonConverterFactory? GetDeltaConverterFactory()
+        => null;
 
-    public virtual JsonConverterFactory? GetDeltaConverterFactory() => null;
+    public Func<IServiceProvider, JsonConverterFactory>? JsonConverterFactoryFunc { get; set; }
 
     public EntityApiConfiguration(Type entityType)
     {
@@ -132,7 +141,7 @@ public class EntityApiConfiguration<TEntity> : EntityApiConfiguration
             {
                 var result = await CreationFactory(sp, delta);
                 return result.ToResults();
-            });
+            }).WithMetadata(registrationContext);
         }
 
         if (QueryFactory is not null)
@@ -198,7 +207,6 @@ public class EntityApiConfiguration<TEntity> : EntityApiConfiguration
 
         return Task.CompletedTask;
     }
-
 }
 
 public class EntityApiConfiguration<TDbContext, TEntity> : EntityApiConfiguration<TEntity>
@@ -393,13 +401,14 @@ public class EntityApiConfiguration<TDbContext, TEntity, TKey> : EntityApiConfig
             return entity.Created();
         };
 
-        routeGroupBuilder.MapPost("/", async (EntityDelta<TEntity> delta
+        routeGroupBuilder
+            .MapPost("/", async (EntityDelta<TEntity> delta
             , [FromServices] IServiceProvider sp
             , CancellationToken cancellationToken) =>
-        {
-            var result = await CreationFactory(sp, delta);
-            return result.ToResults();
-        });
+            {
+                var result = await CreationFactory(sp, delta);
+                return result.ToResults();
+            });
     }
 
     private async Task ProcessChangedNavigationPropertiesRecursive(

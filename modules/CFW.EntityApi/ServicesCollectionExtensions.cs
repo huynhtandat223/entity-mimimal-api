@@ -1,5 +1,4 @@
 ﻿using CFW.Core.Utils;
-using CFW.EntityApi.Attributes;
 using CFW.EntityApi.Models;
 using CFW.EntityApi.Models.Builders;
 using CFW.EntityApi.Queries;
@@ -9,7 +8,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData;
 using Scalar.AspNetCore;
-using System.Reflection;
 using System.Text;
 
 namespace CFW.EntityApi;
@@ -59,54 +57,53 @@ public static class ServicesCollectionExtensions
                 var entityType = interfaceType.GetGenericArguments()[0];
                 builder.ContainerConfiguration.CustomEntityImplementations.Add(entityType);
 
-                services.TryAddSingleton(interfaceType, implementationType);
+                services.TryAddScoped(interfaceType, implementationType);
 
                 var apiConfiguration = typeof(EntityApiConfiguration<>)
                     .MakeGenericType(entityType);
 
-                services.TryAddSingleton(typeof(EntityApiConfiguration), apiConfiguration);
+                services.AddScoped(typeof(EntityApiConfiguration), apiConfiguration);
             }
         }
 
-        var entityAttributes = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(assembly => assembly.GetTypes())
-            .Where(type => !type.IsInterface && !type.IsAbstract)
-            .Where(type => type.GetCustomAttributes<EntityAttribute>() is not null)
-            .Aggregate(new List<EntityAttribute>(), (acc, x) =>
-            {
-                var attributes = x.GetCustomAttributes<EntityAttribute>().ToList();
+        //var entityAttributes = AppDomain.CurrentDomain.GetAssemblies()
+        //    .SelectMany(assembly => assembly.GetTypes())
+        //    .Where(type => !type.IsInterface && !type.IsAbstract)
+        //    .Where(type => type.GetCustomAttributes<EntityAttribute>() is not null)
+        //    .Aggregate(new List<EntityAttribute>(), (acc, x) =>
+        //    {
+        //        var attributes = x.GetCustomAttributes<EntityAttribute>().ToList();
 
-                attributes.ForEach(a => a.TargetType = x);
+        //        attributes.ForEach(a => a.TargetType = x);
 
-                acc.AddRange(attributes);
-                return acc;
-            })
-            .ToList();
+        //        acc.AddRange(attributes);
+        //        return acc;
+        //    })
+        //    .ToList();
 
-        foreach (var entityAttribute in entityAttributes)
-        {
-            var entityType = entityAttribute.TargetType;
-            builder.ContainerConfiguration.CustomEntityImplementations.Add(entityType);
+        //foreach (var entityAttribute in entityAttributes)
+        //{
+        //    var entityType = entityAttribute.TargetType;
+        //    builder.ContainerConfiguration.CustomEntityImplementations.Add(entityType);
 
-            var interfaceType = typeof(IEntityApiConfiguration<>)
-                .MakeGenericType(entityType);
-            var apiConfigurationType = typeof(AttributeEntityApiConfiguration<>)
-                .MakeGenericType(entityType);
+        //    var interfaceType = typeof(IEntityApiConfiguration<>)
+        //        .MakeGenericType(entityType);
+        //    var apiConfigurationType = typeof(AttributeEntityApiConfiguration<>)
+        //        .MakeGenericType(entityType);
 
-            services.TryAddSingleton(interfaceType, s => ActivatorUtilities
-                .CreateInstance(s, apiConfigurationType, entityAttribute));
+        //    services.TryAddSingleton(interfaceType, s => ActivatorUtilities
+        //        .CreateInstance(s, apiConfigurationType, entityAttribute));
 
-            var apiConfiguration = typeof(EntityApiConfiguration<>)
-                .MakeGenericType(entityType);
-            services.TryAddSingleton(typeof(EntityApiConfiguration), apiConfiguration);
-        }
+        //    var apiConfiguration = typeof(EntityApiConfiguration<>)
+        //        .MakeGenericType(entityType);
+        //    services.TryAddSingleton(typeof(EntityApiConfiguration), apiConfiguration);
+        //}
 
         return builder;
     }
 
     public static WebApplication UseEntityMinimalApi(this WebApplication app)
     {
-
         var containerConfigurations = app.Services.GetServices<ContainerConfiguration>();
 
         foreach (var containerConfiguration in containerConfigurations)

@@ -82,7 +82,15 @@ public class EntityFrameworkPopuplationFeature<TDbContext> : IApiFeature
             .Where(x => !customTypes.Contains(x.ClrType))
             .ToList();
 
-        var configurations = scope.ServiceProvider.GetServices<EntityApiConfiguration>();
+        var configurations = scope.ServiceProvider.GetServices<EntityApiConfiguration>().ToList();
+
+        if (_containerConfiguration.ApiConfigurationsFunc is not null)
+        {
+            var manualConfigurations = _containerConfiguration.ApiConfigurationsFunc(scope.ServiceProvider);
+            if (manualConfigurations?.Any() == true)
+                configurations.AddRange(manualConfigurations);
+        }
+
         foreach (var apiConfiguration in configurations)
         {
             var routeName = apiConfiguration.RouteName!;

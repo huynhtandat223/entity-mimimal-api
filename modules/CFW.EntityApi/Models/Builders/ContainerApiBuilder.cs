@@ -66,6 +66,18 @@ public class ContainerApiBuilder
         return this;
     }
 
+    public ContainerApiBuilder AddApiConfigurations<TDependencyService>(
+        Func<TDependencyService, IEnumerable<EntityApiConfiguration>> apiConfigurationsFunc)
+        where TDependencyService : class
+    {
+        _containerConfiguration.ApiConfigurationsFunc = s =>
+        {
+            var dependencyService = s.GetRequiredService<TDependencyService>()!;
+            return apiConfigurationsFunc(dependencyService);
+        };
+        return this;
+    }
+
     public EntityFrameworkPopuplationFeature<TDbContext> PopuplateEntityFrameworkEntities<TDbContext>(
         Action<DbContextOptionsBuilder>? optionBuider = null,
         Func<IEntityType, bool>? entitiesSelector = null)

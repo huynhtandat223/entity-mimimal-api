@@ -4,7 +4,7 @@ using CFW.EntityApi.Models;
 using CFW.EntityApi.Models.Builders;
 using CFW.ODataCore;
 using CFW.ODataCore.Features.Identity.Models;
-using Microsoft.AspNetCore.Identity;
+using CFW.ODataCore.Features.Identity.Services.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Options;
@@ -31,10 +31,21 @@ builder.Services
         .AddApiConfigurations<IServiceProvider>(sp =>
         {
             var db = sp.GetRequiredService<AppDbContext>();
+            var endpoints = new List<CFW.ODataCore.Features.Endpoints.Models.Endpoint>();
+            try
+            {
+                endpoints = db.Set<CFW.ODataCore.Features.Endpoints.Models.Endpoint>()
+                .AsNoTracking()
+                .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.ToString()}");
+                return Enumerable.Empty<EntityApiConfiguration>();
+            }
+
             var runtimeAsmConfig = sp.GetRequiredService<IOptions<RuntimeAsmConfig>>().Value;
-            var endpoints = db.Set<CFW.ODataCore.Features.Endpoints.Models.Endpoint>()
-            .AsNoTracking()
-            .ToList();
+
 
             if (!endpoints.Any())
                 return Enumerable.Empty<EntityApiConfiguration>();
@@ -73,7 +84,7 @@ builder.Services
 //Authentication
 builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
-    .AddRoles<TenantRole>()
+    .AddRoles<ApplicationRole>()
     .AddEntityFrameworkStores<AppDbContext>();
 
 builder.Services.TryAddAllServices();
@@ -86,35 +97,7 @@ app.MapIdentityApi<ApplicationUser>();
 app.UseEntityMinimalApi();
 
 using var scope = app.Services.CreateScope();
-var db = scope.ServiceProvider.GetService<AppDbContext>();
-if (db is not null && !db.Database.CanConnect())
-{
-    db.Database.EnsureCreated();
-    var supperAdminName = "admin@gmail.com";
-    var supperAdminRole = "SuperAdmin";
-    var supperAdminPassword = "123!@#abcABC";
-    var systemTenant = new Tenant { Name = "System", Type = TenantType.System };
-    db.Set<Tenant>().Add(systemTenant);
-    await db.SaveChangesAsync();
-
-    using var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    using var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TenantRole>>();
-
-    var supperAdminUser = new ApplicationUser { UserName = supperAdminName, Email = supperAdminName };
-    var result = await userManager.CreateAsync(supperAdminUser, supperAdminPassword);
-    if (!result.Succeeded)
-    {
-        throw new InvalidOperationException("Test data invalid. User creation failed.");
-    }
-
-    var role = await roleManager.CreateAsync(new TenantRole(systemTenant.Id, supperAdminRole));
-    if (!role.Succeeded)
-    {
-        throw new InvalidOperationException("Test data invalid. Role creation failed.");
-    }
-
-    supperAdminUser.TenantRoles.Add(new TenantRole(systemTenant.Id, supperAdminRole));
-    await db.SaveChangesAsync();
-}
+var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+await db.SeedSuperAdminAsync();
 
 app.Run();

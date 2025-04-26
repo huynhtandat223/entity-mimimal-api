@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace CFW.ODataCore.Features.Identity.Models;
+namespace CFW.AppHost.Features.Identity.Models;
 
 public class ApplicationUser : IdentityUser<Guid>
 {

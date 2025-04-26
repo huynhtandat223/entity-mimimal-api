@@ -1,20 +1,14 @@
-﻿using CFW.Core.Entities;
-using CFW.ODataCore.Features.Identity.Models;
+﻿using CFW.AppHost.Features.Identity.Models;
+using CFW.Core.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System.Reflection;
-using System.Runtime.Loader;
 
-namespace CFW.ODataCore;
+namespace CFW.AppHost.Features.Shared;
 
 public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
-    private readonly RuntimeAsmConfig _runtimeAsmConfig;
-
-    public AppDbContext(DbContextOptions<AppDbContext> options, IOptions<RuntimeAsmConfig> runtimeAsmConfig) : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-        _runtimeAsmConfig = runtimeAsmConfig.Value;
     }
 
     public DbSet<Tenant> Tenants { get; set; }
@@ -28,20 +22,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
-        //scan runtime assemblies for entities
-        var runtimeEntitiesDir = _runtimeAsmConfig.GetRuntimeEntitiesDirOrDefault();
-        var assemblyFiles = Directory.GetFiles(runtimeEntitiesDir, "*.dll", SearchOption.AllDirectories);
-        foreach (var path in assemblyFiles)
-        {
-            Assembly assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
-
-            var entityTypes = assembly.GetTypes();
-            foreach (var entityType in entityTypes)
-            {
-                builder.Entity(entityType);
-            }
-        }
 
         //scan current domain for entities that use marker interface
         var markerType = typeof(IEntity<>);
@@ -81,7 +61,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
                .HasOne(tu => tu.Tenant)
                .WithMany(t => t.TenantUsers)
                .HasForeignKey(tu => tu.TenantId)
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Restrict);
         builder.Entity<TenantUser>()
                .HasOne(tu => tu.Role)
                .WithMany()

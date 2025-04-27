@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace CFW.DynamicApi;
@@ -18,36 +17,39 @@ public class DynamicApiDispatcher
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
         var containerGroupBuilder = app.MapGroup(_containerConfiguration.RoutePrefix);
-
-        foreach (var op in _registry.GetAllOperations())
+        foreach (var apiGroup in _registry.ApiGroups)
         {
-            var group = containerGroupBuilder.MapGroup(op.Route);
-
-            op.ConfigureRoute?.Invoke(group);
-
-            group.MapMethods("", new[] { op.HttpMethod }, async ctx =>
+            var group = containerGroupBuilder.MapGroup(apiGroup.RouteName);
+            foreach (var operation in apiGroup.Operations)
             {
-                foreach (var factory in op.InterceptorFactories)
-                {
-                    var interceptor = factory(ctx.RequestServices);
-                    var earlyResult = await interceptor.OnExecutingAsync(ctx, op);
-                    if (earlyResult is not null)
-                    {
-                        await ctx.Response.WriteAsJsonAsync(earlyResult);
-                        return;
-                    }
-                }
-
-                var result = await op.Handler!(ctx);
-
-                foreach (var factory in op.InterceptorFactories)
-                {
-                    var interceptor = factory(ctx.RequestServices);
-                    result = await interceptor.OnExecutedAsync(ctx, op, result);
-                }
-
-                await ctx.Response.WriteAsJsonAsync(result);
-            });
+                RegisterApiOperation(group, operation);
+            }
         }
+    }
+
+    public static void RegisterApiOperation(RouteGroupBuilder group, DynamicApiOperation operation)
+    {
+        var route = group.MapMethods(operation.Route, [operation.HttpMethod], async ctx =>
+        {
+            // Initialize interceptors once
+            var interceptors = operation.InterceptorFactories
+                .Select(factory => factory(ctx.RequestServices))
+                .ToList();
+
+            // Execute OnExecutingAsync for all interceptors
+            foreach (var interceptor in interceptors)
+            {
+                await interceptor.OnExecutingAsync(ctx, operation);
+            }
+
+            // Execute the handler
+            var result = await operation.Handler!(ctx);
+
+            // Execute OnExecutedAsync for all interceptors
+            foreach (var interceptor in interceptors)
+            {
+                await interceptor.OnExecutedAsync(ctx, operation, result);
+            }
+        }).WithMetadata(operation);
     }
 }

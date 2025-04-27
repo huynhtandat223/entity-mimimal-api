@@ -1,6 +1,5 @@
 using CFW.AppHost.Features.Shared;
 using CFW.DynamicApi;
-using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +11,6 @@ builder.Services
     .AddDynamicApi("api/v1", container =>
     {
         container.DefaultPageSize = 50;
-        container.AllowedQueryOptions = AllowedQueryOptions.All;
     });
 
 var app = builder.Build();

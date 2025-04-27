@@ -1,6 +1,10 @@
-﻿namespace CFW.DynamicApi;
+﻿using CFW.DynamicApi.Buiders;
+
+namespace CFW.DynamicApi;
 
 public interface IEndpointConfigurator
 {
-    void Configure(DynamicApiBuilder builder);
+    DynamicEntityGroupBuilder Configure() => default!;
+
+    Task<DynamicEntityGroupBuilder> ConfigureAsync() => default!;
 }

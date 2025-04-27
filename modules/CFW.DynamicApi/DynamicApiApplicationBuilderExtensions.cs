@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
+﻿using CFW.DynamicApi.Interceptors;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.OData;
 using System.Reflection;
+using System.Text;
 
 namespace CFW.DynamicApi;
 
@@ -23,10 +26,9 @@ public static class DynamicApiApplicationBuilderExtensions
 
         services.AddSingleton(containerConfig);
 
-        if (assembliesToScan == null || assembliesToScan.Length == 0)
-        {
-            assembliesToScan = new[] { Assembly.GetEntryAssembly()! };
-        }
+        assembliesToScan = assembliesToScan.Any() == true
+            ? assembliesToScan
+            : [Assembly.GetEntryAssembly()!];
 
         var endpointConfigurators = assembliesToScan
             .SelectMany(a => a.GetTypes())
@@ -36,74 +38,51 @@ public static class DynamicApiApplicationBuilderExtensions
 
         foreach (var type in endpointConfigurators)
         {
-            services.AddSingleton(typeof(IEndpointConfigurator), type);
+            services.TryAddSingleton(typeof(IEndpointConfigurator), type);
         }
 
-        services.AddSingleton<DynamicApiRegistry>();
-        services.AddSingleton<DynamicApiDispatcher>();
+        //interceptors
+        services.TryAddTransient(typeof(ODataFeatureInterceptor<>));
 
-        services.AddTransient(typeof(ODataFeatureInterceptor<>));
+        //Odata services
+        services.TryAddSingleton(_ =>
+        {
+            var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
+            formatter.SupportedEncodings.Add(Encoding.UTF8);
+
+            return formatter;
+        });
 
         return services;
     }
 
-    public static IApplicationBuilder UseDynamicApi(this IApplicationBuilder app)
+    public static async Task<IApplicationBuilder> UseDynamicApi(this WebApplication app)
     {
-        var serviceProvider = app.ApplicationServices;
+        var serviceProvider = app.Services;
+        var containerConfigs = serviceProvider.GetServices<ContainerConfiguration>();
+        if (containerConfigs.Any() == false)
+            throw new InvalidOperationException("No ContainerConfiguration found. Please call AddDynamicApi first.");
 
-        var registry = serviceProvider.GetRequiredService<DynamicApiRegistry>();
-        var containerConfig = serviceProvider.GetRequiredService<ContainerConfiguration>();
-
-        // Create a "manual" builder for calling configurators
-        var builder = new InternalDynamicApiBuilder(registry, containerConfig);
-
-        var configurators = serviceProvider.GetServices<IEndpointConfigurator>();
-        foreach (var configurator in configurators)
+        foreach (var containerConfig in containerConfigs)
         {
-            configurator.Configure(builder);
-        }
+            var registry = new DynamicApiRegistry();
 
-        var dispatcher = serviceProvider.GetRequiredService<DynamicApiDispatcher>();
-        dispatcher.MapEndpoints((IEndpointRouteBuilder)app);
+            var configurators = serviceProvider.GetServices<IEndpointConfigurator>();
+            foreach (var configurator in configurators)
+            {
+                var builder = configurator.Configure();
+                if (builder is null)
+                {
+                    builder = await configurator.ConfigureAsync();
+                }
+                var operations = builder.Build();
+                registry.RegisterApiGroup(builder);
+            }
+
+            var dispatcher = new DynamicApiDispatcher(registry, containerConfig);
+            dispatcher.MapEndpoints(app);
+        }
 
         return app;
-    }
-
-    private class InternalDynamicApiBuilder : DynamicApiBuilder
-    {
-        private readonly DynamicApiRegistry _registry;
-
-        public InternalDynamicApiBuilder(DynamicApiRegistry registry, ContainerConfiguration containerConfig)
-            : base(registry, containerConfig)
-        {
-            _registry = registry;
-        }
-
-        public new DynamicEntityGroupBuilder<TEntity> AddRouteGroup<TEntity>(Action<DynamicEntityGroupBuilder<TEntity>>? configure = null)
-            where TEntity : class
-        {
-            var builder = DynamicEntityGroupBuilder<TEntity>.Create();
-            configure?.Invoke(builder);
-            _registry.RegisterOperations(builder.Build());
-            return builder;
-        }
-
-        public new DynamicDbSetEntityGroupBuilder<TEntity, TDbContext, TKey> AddDbSetRouteGroup<TEntity, TDbContext, TKey>(Action<DynamicDbSetEntityGroupBuilder<TEntity, TDbContext, TKey>>? configure = null)
-            where TEntity : class
-            where TDbContext : DbContext
-        {
-            var builder = DynamicDbSetEntityGroupBuilder<TEntity, TDbContext, TKey>.Create();
-            configure?.Invoke(builder);
-            _registry.RegisterOperations(builder.Build());
-            return builder;
-        }
-
-        public new DynamicApiBuilder AddOperation(Action<DynamicOperationBuilder> configure)
-        {
-            var builder = new DynamicOperationBuilder();
-            configure(builder);
-            _registry.RegisterOperations(new[] { builder.Build() });
-            return this;
-        }
     }
 }

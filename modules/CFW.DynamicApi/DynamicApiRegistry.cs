@@ -1,13 +1,15 @@
-﻿namespace CFW.DynamicApi;
+﻿using CFW.DynamicApi.Buiders;
+
+namespace CFW.DynamicApi;
 
 public class DynamicApiRegistry
 {
-    private readonly List<DynamicApiOperation> _operations = new();
+    private readonly List<DynamicEntityGroupBuilder> _apiGroups = new();
 
-    internal void RegisterOperations(IEnumerable<DynamicApiOperation> ops)
+    internal void RegisterApiGroup(DynamicEntityGroupBuilder apiGroup)
     {
-        _operations.AddRange(ops);
+        _apiGroups.Add(apiGroup);
     }
 
-    public IReadOnlyList<DynamicApiOperation> GetAllOperations() => _operations.AsReadOnly();
+    public IReadOnlyCollection<DynamicEntityGroupBuilder> ApiGroups => _apiGroups.AsReadOnly();
 }

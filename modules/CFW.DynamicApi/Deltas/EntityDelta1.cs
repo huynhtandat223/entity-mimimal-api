@@ -1,38 +1,65 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Collections;
+using System.Text.Json;
 
 namespace CFW.DynamicApi.Deltas;
+
+public class EntityDeltaSet
+{
+    public required Type ObjectType { get; set; }
+
+    public List<EntityDelta> ChangedProperties { get; }
+        = new List<EntityDelta>();
+
+    public IList GetList()
+    {
+        var listType = typeof(List<>).MakeGenericType(ObjectType);
+        var resultList = (IList)Activator.CreateInstance(listType)!;
+
+        foreach (var item in ChangedProperties)
+        {
+            var instance = item.GetInstance();
+            resultList.Add(instance);
+        }
+        return resultList;
+    }
+}
+
+public class EntityDelta
+{
+    public IEntityType? EfCoreEntityType { get; set; }
+
+    public IComplexProperty? EfCoreComplexProperty { get; set; }
+
+    public Dictionary<string, object?> ChangedProperties { get; }
+        = new Dictionary<string, object?>();
+
+    public virtual object? GetInstance() { return default!; }
+}
 
 public class EntityDelta<TEntity> : EntityDelta
     where TEntity : class
 {
     public TEntity? Instance { get; set; } = Activator.CreateInstance<TEntity>();
 
-    public override object? GetInstance() => Instance;
-
     public static async ValueTask<EntityDelta<TEntity>?> BindAsync(HttpContext context)
     {
-        var entity = context.GetEndpoint()!.Metadata.GetMetadata<DynamicApiOperation>()!;
+        var apiOperation = context.GetEndpoint()!.Metadata.GetMetadata<DynamicApiOperation>()!;
         var jsonOptions = context.RequestServices.GetRequiredService<IOptions<JsonOptions>>().Value;
 
-        throw new NotImplementedException();
+        var customizedOptions = new JsonSerializerOptions(jsonOptions.SerializerOptions);
+        var factory = apiOperation.EntityGroup.CreateJsonConverterFactory(context.RequestServices);
 
-        //var customizedOptions = new JsonSerializerOptions(jsonOptions.SerializerOptions);
-        //var factory = entityApiConfiguration.GetDeltaConverterFactory();
+        customizedOptions.Converters.Add(factory!);
 
-        //if (factory is null && entityApiConfiguration.JsonConverterFactoryFunc is not null)
-        //{
-        //    factory = entityApiConfiguration.JsonConverterFactoryFunc(context.RequestServices);
-        //}
+        var delta = await JsonSerializer.DeserializeAsync<EntityDelta<TEntity>>(context.Request.Body
+            , customizedOptions);
 
-        //customizedOptions.Converters.Add(factory!);
-
-        //var delta = await JsonSerializer.DeserializeAsync<EntityDelta<TEntity>>(context.Request.Body
-        //    , customizedOptions);
-
-        //return delta;
+        return delta;
     }
 
 

@@ -4,19 +4,19 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace CFW.DynamicApi.Deltas;
-
-public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConverterFactory
-    where TDbContext : DbContext
+public class EntityDeltaConverterFactory<TEntity, TDbContext> : JsonConverterFactory
     where TEntity : class
+    where TDbContext : DbContext
 {
-    public EntityApiConfiguration<TDbContext, TEntity, TKey> EntityApiConfiguration { get; }
+    private readonly TDbContext _db;
+
+    public EntityDeltaConverterFactory(TDbContext db)
+    {
+        _db = db;
+    }
 
     private List<IEntityType> _navigations = new List<IEntityType>();
 
-    public EntityDeltaConverterFactory(EntityApiConfiguration<TDbContext, TEntity, TKey> entityApiConfiguration)
-    {
-        EntityApiConfiguration = entityApiConfiguration;
-    }
 
     public override bool CanConvert(Type typeToConvert)
     {
@@ -29,12 +29,13 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
 
     public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
+        var dbEntityType = _db.Set<TEntity>().EntityType;
         var argType = typeToConvert.GetGenericArguments()[0];
         if (argType == typeof(TEntity))
-            return new EntityDeltaConverter<TEntity>(EntityApiConfiguration.DbEntityType!);
+            return new EntityDeltaConverter<TEntity>(dbEntityType);
 
         var conveterType = typeof(EntityDeltaConverter<>).MakeGenericType(argType);
-        var navigations = EntityApiConfiguration.DbEntityType!.GetNavigations();
+        var navigations = dbEntityType.GetNavigations();
         var navigation = navigations.FirstOrDefault(x => x.ClrType == argType);
         if (navigation != null)
         {
@@ -45,7 +46,7 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
             return converter!;
         }
 
-        var complexProperties = EntityApiConfiguration.DbEntityType!.GetComplexProperties();
+        var complexProperties = dbEntityType.GetComplexProperties();
         var complexProperty = complexProperties.FirstOrDefault(x => x.ClrType == argType);
         if (complexProperty != null)
         {
@@ -73,5 +74,4 @@ public class EntityDeltaConverterFactory<TDbContext, TEntity, TKey> : JsonConver
 
         throw new NotImplementedException();
     }
-
 }

@@ -30,9 +30,6 @@ public class EntityDeltaConverter<TSource> : JsonConverter<EntityDelta<TSource>>
     {
         var delta = new EntityDelta<TSource>();
 
-        delta.EfCoreEntityType = _entityType;
-        delta.EfCoreComplexProperty = _complexProperty;
-
         var scalarPropertyMap = new Dictionary<string, IProperty>();
         var complexPropertyMap = new Dictionary<string, IComplexProperty>();
         var collectionPropertyMap = new Dictionary<string, INavigation>();

@@ -75,7 +75,7 @@ public static class DynamicApiApplicationBuilderExtensions
                 {
                     builder = await configurator.ConfigureAsync();
                 }
-                var operations = builder.Build();
+                builder.Build();
                 registry.RegisterApiGroup(builder);
             }
 

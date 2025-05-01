@@ -72,13 +72,13 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
 
     public IODataFeature CreateODataFeature(IServiceProvider serviceProvider)
     {
-        var Name = "tenants";
+        var entityName = typeof(TEntity).Name;
         var builder = new ODataConventionModelBuilder();
-        var entitySet = builder.EntitySet<TEntity>(Name);
-        var routePrefix = _containerConfiguration.RoutePrefix;
+        var entitySet = builder.EntitySet<TEntity>(entityName);
+        var routePrefix = StringUtils.SanitizeRoute(_containerConfiguration.RoutePrefix);
 
         var odataEntityType = builder.AddEntityType(typeof(TEntity));
-        builder.AddEntitySet(Name, odataEntityType);
+        builder.AddEntitySet(entityName, odataEntityType);
 
 
         //TODO: handle this in a better way
@@ -86,7 +86,7 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
         builder.EnableLowerCamelCaseForPropertiesAndEnums();
 
         var model = builder.GetEdmModel();
-        var edmEntitySet = model.EntityContainer.FindEntitySet(Name);
+        var edmEntitySet = model.EntityContainer.FindEntitySet(entityName);
         var entitySetSegment = new EntitySetSegment(edmEntitySet);
         var segments = new List<ODataPathSegment> { entitySetSegment };
 

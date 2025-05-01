@@ -1,9 +1,13 @@
-﻿using Humanizer;
+﻿using CFW.Core.Results;
+using CFW.DynamicApi.Deltas;
+using Humanizer;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace CFW.DynamicApi.Buiders;
 
@@ -17,6 +21,8 @@ public class DynamicEntityGroupBuilder
     protected readonly List<string> _excludeProperties = new();
     protected HttpMethod _httpMethod = HttpMethod.Get;
 
+    public virtual JsonConverterFactory CreateJsonConverterFactory(IServiceProvider serviceProvider) { throw new NotImplementedException(); }
+
     public IReadOnlyCollection<DynamicApiOperation> Operations => _operations.AsReadOnly();
 
     internal virtual IEnumerable<DynamicApiOperation> Build()
@@ -29,8 +35,6 @@ public class DynamicEntityGroupBuilder
                 _routeConfigurator?.Invoke(group);
                 originalConfigure?.Invoke(group);
             };
-
-            op.Route = $"/{RouteName}{op.Route}";
         }
 
         return _operations;
@@ -51,10 +55,11 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext> : DynamicEntityGroup
     where TEntity : class
     where TDbContext : DbContext
 {
-    public DynamicEntityGroupBuilder<TEntity> AddQueryApi(Action<DynamicApiOperation>? operationConfig = null)
+    public DynamicEntityGroupBuilder<TEntity, TDbContext> AddQueryApi(Action<DynamicApiOperation>? operationConfig = null)
     {
         var result = new DynamicApiOperation
         {
+            EntityGroup = this,
             HttpMethod = HttpMethod.Get.Method,
             Handler = async (context) =>
             {
@@ -70,24 +75,87 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext> : DynamicEntityGroup
         return this;
     }
 
-    //public DynamicEntityGroupBuilder<TEntity> AddCreationApi(Action<DynamicApiOperation>? operationConfig = null)
-    //{
-    //    var result = new DynamicApiOperation
-    //    {
-    //        HttpMethod = HttpMethod.Post.Method,
-    //        Handler = async (EntityDelta<TEntity> delta) =>
-    //        {
-    //            var db = context.RequestServices.GetRequiredService<TDbContext>();
-    //            var entities = db.Set<TEntity>().AsNoTracking();
-    //            return await Task.FromResult(entities);
-    //        }
-    //    };
+    public DynamicEntityGroupBuilder<TEntity> AddCreationApi(Action<DynamicApiOperation>? operationConfig = null)
+    {
+        var result = new DynamicApiOperation
+        {
+            EntityGroup = this,
+            HttpMethod = HttpMethod.Post.Method,
+            Handler = async (context) =>
+            {
+                var delta = await EntityDelta<TEntity>.BindAsync(context);
+                var db = context.RequestServices.GetRequiredService<TDbContext>();
 
-    //    operationConfig?.Invoke(result);
+                var entity = delta.Instance!;
+                var entry = db!.Set<TEntity>().Add(entity);
 
-    //    WithOperation(result);
-    //    return this;
-    //}
+                await ProcessChangedNavigationPropertiesRecursive(delta.ChangedProperties!, entry, default);
+
+                var affected = await db.SaveChangesAsync();
+                if (affected == 0)
+                {
+                    return entity.Failed("Failed to create entity");
+                }
+
+                return entity.Created();
+            }
+        };
+
+        operationConfig?.Invoke(result);
+
+        WithOperation(result);
+        return this;
+    }
+
+    private async Task ProcessChangedNavigationPropertiesRecursive(
+        IDictionary<string, object> changedProperties,
+        EntityEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        var entityDeltas = changedProperties
+            .Where(x => x.Value is EntityDelta delta && delta.EfCoreEntityType is not null);
+
+        foreach (var (key, value) in entityDeltas)
+        {
+            var delta = (EntityDelta)value;
+            var navigation = entry.Navigation(key);
+            if (!navigation.IsLoaded)
+            {
+                await navigation.LoadAsync(cancellationToken);
+            }
+            await ProcessChangedNavigationPropertiesRecursive(delta.ChangedProperties!
+                , entry.Context.Entry(navigation.CurrentValue!), cancellationToken);
+        }
+
+        var collectionDeltas = changedProperties
+            .Where(x => x.Value is EntityDeltaSet deltaSets);
+
+        foreach (var (key, value) in collectionDeltas)
+        {
+            var deltaSets = (EntityDeltaSet)value;
+            var navigation = entry.Navigation(key);
+            if (!navigation.IsLoaded)
+            {
+                await navigation.LoadAsync(cancellationToken);
+            }
+
+            foreach (var delta in deltaSets.ChangedProperties)
+            {
+                var itemEntry = entry.Context.Entry(delta.GetInstance()!);
+                await ProcessChangedNavigationPropertiesRecursive(delta!.ChangedProperties!
+                    , itemEntry, cancellationToken);
+            }
+        }
+    }
+
+    public override JsonConverterFactory CreateJsonConverterFactory(IServiceProvider serviceProvider)
+    {
+        var result = ActivatorUtilities.CreateInstance(serviceProvider
+            , typeof(EntityDeltaConverterFactory<TEntity, TDbContext>));
+
+        return result as JsonConverterFactory
+            ?? throw new InvalidOperationException($"Cannot create {nameof(EntityDeltaConverterFactory<TEntity, TDbContext>)}");
+    }
 }
 
 public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder where TEntity : class

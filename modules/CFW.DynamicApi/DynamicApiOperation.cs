@@ -1,4 +1,5 @@
-﻿using CFW.DynamicApi.Interceptors;
+﻿using CFW.DynamicApi.Buiders;
+using CFW.DynamicApi.Interceptors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,8 @@ public class DynamicApiOperation
     public Action<RouteGroupBuilder>? ConfigureRoute { get; set; }
 
     public List<Func<IServiceProvider, IOperationInterceptor>> InterceptorFactories { get; } = new();
+
+    public DynamicEntityGroupBuilder EntityGroup { get; set; } = null!;
 
     public DynamicApiOperation UseInterceptor<TInterceptor>()
         where TInterceptor : IOperationInterceptor

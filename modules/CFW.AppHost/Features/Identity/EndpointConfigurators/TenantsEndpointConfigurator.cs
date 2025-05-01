@@ -14,7 +14,8 @@ public class TenantsEndpointConfigurator : IEndpointConfigurator
             .AddQueryApi(api =>
             {
                 api.UseInterceptor<ODataFeatureInterceptor<Tenant>>();
-            });
+            })
+            .AddCreationApi();
 
         return builder;
     }

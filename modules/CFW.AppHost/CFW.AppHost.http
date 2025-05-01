@@ -1,6 +1,0 @@
-@CFW.AppHost_HostAddress = http://localhost:5155
-
-GET {{CFW.AppHost_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

@@ -6,6 +6,26 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CFW.DynamicApi;
 
+public enum PropertyType
+{
+    Scalar, Complex, Collection
+}
+
+public class PropertyMetadata
+{
+    public required string Name { set; get; }
+
+    public required Type ClrType { set; get; }
+
+    public required bool IsKey { set; get; }
+
+    public required bool IsRequired { set; get; }
+
+    public PropertyType PropertyType { set; get; } = PropertyType.Scalar;
+
+    public IEnumerable<PropertyMetadata>? ChildProperties { set; get; }
+}
+
 public class DynamicApiOperation
 {
     public string HttpMethod { get; set; } = "GET";
@@ -30,6 +50,8 @@ public class DynamicApiOperation
         InterceptorFactories.Add(s => ActivatorUtilities.GetServiceOrCreateInstance<TInterceptor>(s));
         return this;
     }
+
+    public IEnumerable<PropertyMetadata> AllowedProperties { get; set; } = Enumerable.Empty<PropertyMetadata>();
 }
 
 

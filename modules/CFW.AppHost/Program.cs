@@ -1,5 +1,4 @@
-﻿using CFW.AppHost.Features.Identity.Models;
-using CFW.AppHost.Features.Identity.Services.Extensions;
+﻿using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
 using CFW.DynamicApi;
 using Microsoft.EntityFrameworkCore;
@@ -30,18 +29,18 @@ builder.Services
     });
 
 //Authentication
-builder.Services.AddAuthorization();
-builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
-    .AddRoles<ApplicationRole>()
-    .AddEntityFrameworkStores<AppDbContext>();
+//builder.Services.AddAuthorization();
+//builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
+//    .AddRoles<ApplicationRole>()
+//    .AddEntityFrameworkStores<AppDbContext>();
 
 var app = builder.Build();
 
 //Use CORS policy
 app.UseCors("AllowFrontend"); // 👈 apply named policy globally
 
-app.UseAuthorization();
-app.MapIdentityApi<ApplicationUser>();
+//app.UseAuthorization();
+//app.MapIdentityApi<ApplicationUser>();
 
 await app.UseDynamicApi();
 

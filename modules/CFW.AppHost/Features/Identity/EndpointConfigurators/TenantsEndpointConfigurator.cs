@@ -8,15 +8,21 @@ namespace CFW.AppHost.Features.Identity.EndpointConfigurators;
 
 public class TenantsEndpointConfigurator : IEndpointConfigurator
 {
+    private readonly DynamicEntityGroupBuilder<Tenant, AppDbContext> _buider;
+
+    public TenantsEndpointConfigurator(DynamicEntityGroupBuilder<Tenant, AppDbContext> builder)
+    {
+        _buider = builder;
+    }
+
     public DynamicEntityGroupBuilder Configure()
     {
-        var builder = DynamicEntityGroupBuilder.Create<Tenant, AppDbContext>()
+        return _buider
             .AddQueryApi(api =>
             {
                 api.UseInterceptor<ODataFeatureInterceptor<Tenant>>();
             })
-            .AddCreationApi();
-
-        return builder;
+            //.AddCreationApi()
+            .ExcludeProperties(x => x.ConnectionString);
     }
 }

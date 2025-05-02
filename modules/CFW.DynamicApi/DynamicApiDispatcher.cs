@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
 
 namespace CFW.DynamicApi;
@@ -17,9 +19,13 @@ public class DynamicApiDispatcher
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
         var containerGroupBuilder = app.MapGroup(_containerConfiguration.RoutePrefix);
+
         foreach (var apiGroup in _registry.ApiGroups)
         {
-            var group = containerGroupBuilder.MapGroup(apiGroup.RouteName);
+            var group = containerGroupBuilder
+                .MapGroup(apiGroup.RouteName)
+                .WithTags(apiGroup.RouteName);
+
             foreach (var operation in apiGroup.Operations)
             {
                 RegisterApiOperation(group, operation);
@@ -29,7 +35,7 @@ public class DynamicApiDispatcher
 
     public static void RegisterApiOperation(RouteGroupBuilder group, DynamicApiOperation operation)
     {
-        var route = group.MapMethods(operation.Route, [operation.HttpMethod], async ctx =>
+        var route = group.MapMethods(operation.Route, [operation.HttpMethod], async (HttpContext ctx) =>
         {
             // Initialize interceptors once
             var interceptors = operation.InterceptorFactories
@@ -50,6 +56,9 @@ public class DynamicApiDispatcher
             {
                 await interceptor.OnExecutedAsync(ctx, operation, result);
             }
+
+            // Use the static instance of EmptyHttpResult instead of creating a new one
+            return EmptyHttpResult.Instance;
         }).WithMetadata(operation);
     }
 }

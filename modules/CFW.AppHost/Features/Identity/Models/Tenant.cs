@@ -10,14 +10,11 @@ public class Tenant
 
     public DateTime CreatedAt { get; set; }
 
+    public DateTime? UpdatedAt { get; set; }
+
     public virtual ICollection<ApplicationRole> Roles { get; set; } = new List<ApplicationRole>();
 
     public virtual ICollection<ApplicationPolicy> Policies { get; set; } = new List<ApplicationPolicy>();
 
     public virtual ICollection<TenantUser> TenantUsers { get; set; } = new List<TenantUser>();
-
-    public Tenant()
-    {
-        CreatedAt = DateTime.UtcNow;
-    }
 }

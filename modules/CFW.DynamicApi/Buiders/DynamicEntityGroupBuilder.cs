@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text.Json.Serialization;
 
 namespace CFW.DynamicApi.Buiders;
@@ -21,14 +20,18 @@ public class DynamicEntityGroupBuilder
     protected readonly List<string> _excludeProperties = new();
     protected HttpMethod _httpMethod = HttpMethod.Get;
 
+    protected virtual IEnumerable<PropertyMetadata> ResolveSelectedProperties() => Enumerable.Empty<PropertyMetadata>();
+
     public virtual JsonConverterFactory CreateJsonConverterFactory(IServiceProvider serviceProvider) { throw new NotImplementedException(); }
 
     public IReadOnlyCollection<DynamicApiOperation> Operations => _operations.AsReadOnly();
 
     internal virtual IEnumerable<DynamicApiOperation> Build()
     {
+        var properties = ResolveSelectedProperties();
         foreach (var op in _operations)
         {
+            op.AllowedProperties = properties;
             var originalConfigure = op.ConfigureRoute;
             op.ConfigureRoute = group =>
             {
@@ -39,22 +42,18 @@ public class DynamicEntityGroupBuilder
 
         return _operations;
     }
-
-    public static DynamicEntityGroupBuilder<TEntity, TDbContext> Create<TEntity, TDbContext>()
-        where TEntity : class
-        where TDbContext : DbContext
-    {
-        return new DynamicEntityGroupBuilder<TEntity, TDbContext>
-        {
-            RouteName = typeof(TEntity).Name.Pluralize().ToLowerInvariant()
-        };
-    }
 }
 
 public class DynamicEntityGroupBuilder<TEntity, TDbContext> : DynamicEntityGroupBuilder<TEntity>
     where TEntity : class
     where TDbContext : DbContext
 {
+    private readonly TDbContext _db;
+    public DynamicEntityGroupBuilder(TDbContext db)
+    {
+        _db = db;
+    }
+
     public DynamicEntityGroupBuilder<TEntity, TDbContext> AddQueryApi(Action<DynamicApiOperation>? operationConfig = null)
     {
         var result = new DynamicApiOperation
@@ -74,6 +73,87 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext> : DynamicEntityGroup
         WithOperation(result);
         return this;
     }
+
+    protected override IEnumerable<PropertyMetadata> ResolveSelectedProperties()
+    {
+        var dbEntityType = _db.Set<TEntity>().EntityType;
+
+        var props = dbEntityType.GetProperties();
+        if (_includeProperties.Any())
+            props = props.Where(x => _includeProperties.Contains(x.Name));
+
+        if (_excludeProperties.Any())
+            props = props.Where(x => !_excludeProperties.Contains(x.Name));
+
+        var scalarProps = props
+            .Select(x => new PropertyMetadata
+            {
+                IsKey = x.IsKey(),
+                Name = x.Name,
+                ClrType = x.ClrType,
+                IsRequired = x.IsNullable,
+                PropertyType = PropertyType.Scalar
+            });
+
+        var complexProps = dbEntityType.GetComplexProperties();
+        if (_includeProperties.Any())
+            complexProps = complexProps.Where(x => _includeProperties.Contains(x.Name));
+
+        if (_excludeProperties.Any())
+            complexProps = complexProps.Where(x => !_excludeProperties.Contains(x.Name));
+
+        var complexPropsMetadata = complexProps
+            .Select(x => new PropertyMetadata
+            {
+                IsKey = false,
+                Name = x.Name,
+                ClrType = x.ClrType,
+                IsRequired = x.IsNullable,
+                PropertyType = x.IsCollection ? PropertyType.Collection : PropertyType.Complex,
+                ChildProperties = x.DeclaringType.GetProperties()
+                    .Select(p => new PropertyMetadata
+                    {
+                        IsKey = p.IsKey(),
+                        Name = p.Name,
+                        ClrType = p.ClrType,
+                        IsRequired = p.IsNullable,
+                        PropertyType = PropertyType.Scalar
+                    })
+            });
+
+        var navigations = dbEntityType.GetNavigations();
+        if (_includeProperties.Any())
+            navigations = navigations.Where(x => _includeProperties.Contains(x.Name));
+        if (_excludeProperties.Any())
+            navigations = navigations.Where(x => !_excludeProperties.Contains(x.Name));
+
+        var navigationProps = navigations
+    .Select(x => new PropertyMetadata
+    {
+        IsKey = false,
+        Name = x.Name,
+        ClrType = x.ClrType,
+        IsRequired = false,
+        PropertyType = x.IsCollection ? PropertyType.Collection : PropertyType.Complex,
+        ChildProperties = x.TargetEntityType.GetProperties()
+            .Select(p => new PropertyMetadata
+            {
+                IsKey = p.IsKey(),
+                Name = p.Name,
+                ClrType = p.ClrType,
+                IsRequired = !p.IsNullable,
+                PropertyType = PropertyType.Scalar
+            })
+            .ToList()
+    })
+    .ToList();
+
+
+        return scalarProps
+            .Concat(complexPropsMetadata)
+            .Concat(navigationProps).ToList();
+    }
+
 
     public DynamicEntityGroupBuilder<TEntity> AddCreationApi(Action<DynamicApiOperation>? operationConfig = null)
     {
@@ -218,16 +298,4 @@ public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder wher
         throw new InvalidOperationException("Invalid expression");
     }
 
-    public IReadOnlyList<string> ResolveSelectedProperties()
-    {
-        if (_includeProperties.Count == 0)
-        {
-            var props = typeof(TEntity).GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            return props.Select(p => p.Name).Except(_excludeProperties).ToList();
-        }
-        else
-        {
-            return _includeProperties.Except(_excludeProperties).ToList();
-        }
-    }
 }

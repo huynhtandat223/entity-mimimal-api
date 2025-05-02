@@ -1,4 +1,6 @@
-﻿using CFW.DynamicApi.Interceptors;
+﻿using CFW.DynamicApi.Buiders;
+using CFW.DynamicApi.Interceptors;
+using CFW.DynamicApi.OpenApiTransformers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +22,7 @@ public static class DynamicApiApplicationBuilderExtensions
     {
         services.AddOpenApi(o =>
         {
-            //o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
+            o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
         });
 
         var containerConfig = new ContainerConfiguration
@@ -44,11 +46,12 @@ public static class DynamicApiApplicationBuilderExtensions
 
         foreach (var type in endpointConfigurators)
         {
-            services.TryAddSingleton(typeof(IEndpointConfigurator), type);
+            services.TryAddTransient(typeof(IEndpointConfigurator), type);
         }
 
         //interceptors
         services.TryAddTransient(typeof(ODataFeatureInterceptor<>));
+        services.TryAddTransient(typeof(DynamicEntityGroupBuilder<,>));
 
         //Odata services
         services.TryAddSingleton(_ =>
@@ -65,7 +68,9 @@ public static class DynamicApiApplicationBuilderExtensions
     public static async Task<IApplicationBuilder> UseDynamicApi(this WebApplication app)
     {
         var serviceProvider = app.Services;
-        var containerConfigs = serviceProvider.GetServices<ContainerConfiguration>();
+        using var scope = serviceProvider.CreateScope();
+
+        var containerConfigs = scope.ServiceProvider.GetServices<ContainerConfiguration>();
         if (containerConfigs.Any() == false)
             throw new InvalidOperationException("No ContainerConfiguration found. Please call AddDynamicApi first.");
 
@@ -73,7 +78,7 @@ public static class DynamicApiApplicationBuilderExtensions
         {
             var registry = new DynamicApiRegistry();
 
-            var configurators = serviceProvider.GetServices<IEndpointConfigurator>();
+            var configurators = scope.ServiceProvider.GetServices<IEndpointConfigurator>();
             foreach (var configurator in configurators)
             {
                 var builder = configurator.Configure();

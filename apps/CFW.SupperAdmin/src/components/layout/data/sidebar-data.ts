@@ -16,6 +16,7 @@ import {
   IconServerOff,
   IconSettings,
   IconTool,
+  IconTransformPoint,
   IconUserCog,
   IconUserOff,
   IconUsers,
@@ -47,6 +48,16 @@ export const sidebarData: SidebarData = {
     },
   ],
   navGroups: [
+    {
+      title: 'Account management',
+      items: [
+        {
+          title: 'Tenants',
+          url: '/',
+          icon: IconTransformPoint,
+        },
+      ],
+    },
     {
       title: 'General',
       items: [

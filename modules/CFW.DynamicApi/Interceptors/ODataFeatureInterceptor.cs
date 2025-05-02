@@ -24,7 +24,7 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
 
     public async Task OnExecutedAsync(HttpContext httpContext, DynamicApiOperation operation, object? result)
     {
-        if (result is not IEnumerable)
+        if (result is not IEnumerable enumerable)
             return;
 
         var formatter = httpContext.RequestServices.GetRequiredService<ODataOutputFormatter>();
@@ -54,11 +54,57 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
             }
         }
 
-        httpContext.Request.QueryString = queryBuilder.ToQueryString();
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(httpContext.Request.QueryString.Value ?? string.Empty);
+
+        // Step 1: Find $select key
+        var selectKey = query.Keys
+            .FirstOrDefault(k => string.Equals(k, "$select", StringComparison.OrdinalIgnoreCase) || string.Equals(k, "select", StringComparison.OrdinalIgnoreCase));
+
+        // Step 2: Prepare allowed properties
+        var allowedPropDict = operation.AllowedProperties
+            .Where(x => x.PropertyType == PropertyType.Scalar)
+            .ToDictionary(x => x.Name, x => x.Name, StringComparer.OrdinalIgnoreCase);
+
+        List<string> selectedProps;
+
+        if (!string.IsNullOrWhiteSpace(selectKey) && query.TryGetValue(selectKey, out var rawSelect))
+        {
+            var requestedProps = rawSelect.ToString()
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(p => p.Trim())
+                .ToList();
+
+            selectedProps = requestedProps
+                .Where(p => allowedPropDict.ContainsKey(p))
+                .Select(p => allowedPropDict[p])
+                .ToList();
+
+            // fallback if nothing valid selected
+            if (selectedProps.Count == 0)
+            {
+                selectedProps = allowedPropDict.Values.ToList();
+            }
+        }
+        else
+        {
+            // No $select provided, use full list
+            selectedProps = allowedPropDict.Values.ToList();
+        }
+
+        // Step 3: Overwrite the $select query param
+        query["$select"] = string.Join(",", selectedProps);
+
+        // Step 4: Rewrite the query string on the request
+        var newQueryString = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(string.Empty, query);
+        httpContext.Request.QueryString = new QueryString(newQueryString);
+
 
         var odataQueryContext = new ODataQueryContext(odataFeature.Model, typeof(TEntity), odataFeature.Path);
 
         var options = new ODataQueryOptions<TEntity>(odataQueryContext, httpContext.Request);
+
+        var queryable = enumerable.AsQueryable();
+        options.ApplyTo(queryable);
 
         var formatterContext = new OutputFormatterWriteContext(httpContext,
             (stream, encoding) => new StreamWriter(stream, encoding),

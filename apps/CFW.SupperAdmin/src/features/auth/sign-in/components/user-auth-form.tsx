@@ -2,9 +2,14 @@ import { HTMLAttributes, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
+import { AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { usePostLogin } from '@/api/cfw-apphost/cfw-apphost'
+import { useAuthStore } from '@/stores/authStore'
 import { cn } from '@/lib/utils'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -35,6 +40,35 @@ const formSchema = z.object({
 })
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
+  const navigate = useNavigate()
+  const { auth } = useAuthStore()
+  const [loginError, setLoginError] = useState('')
+
+  const loginMutation = usePostLogin({
+    mutation: {
+      onSuccess: (data) => {
+        // Save token to auth store with all required data
+        auth.setToken({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          expiresIn: data.expiresIn,
+        })
+
+        // Navigate to main page
+        const searchParams = new URLSearchParams(window.location.search)
+        const redirect = searchParams.get('redirect') || '/'
+        navigate({ to: redirect })
+
+        toast.success('Login successful!')
+      },
+      onError: (_error) => {
+        // Show error message in the form
+        setLoginError('Login failed. Please check your credentials.')
+        setIsLoading(false)
+      },
+    },
+  })
+
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -46,13 +80,19 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   })
 
   function onSubmit(data: z.infer<typeof formSchema>) {
+    // Clear any previous errors
+    setLoginError('')
     setIsLoading(true)
-    // eslint-disable-next-line no-console
-    console.log(data)
 
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 3000)
+    // Call the login API
+    loginMutation.mutate({
+      data: {
+        email: data.email,
+        password: data.password,
+        twoFactorCode: null,
+        twoFactorRecoveryCode: null,
+      },
+    })
   }
 
   return (
@@ -62,6 +102,13 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         className={cn('grid gap-3', className)}
         {...props}
       >
+        {loginError && (
+          <Alert variant='destructive' className='mb-2'>
+            <AlertCircle className='h-4 w-4' />
+            <AlertDescription>{loginError}</AlertDescription>
+          </Alert>
+        )}
+
         <FormField
           control={form.control}
           name='email'
@@ -95,7 +142,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           )}
         />
         <Button className='mt-2' disabled={isLoading}>
-          Login
+          {isLoading ? 'Logging in...' : 'Login'}
         </Button>
 
         <div className='relative my-2'>

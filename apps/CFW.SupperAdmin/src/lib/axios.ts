@@ -4,6 +4,7 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios'
+import { useAuthStore } from '@/stores/authStore'
 
 // Get environment variables
 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -25,12 +26,15 @@ const axiosInstance: AxiosInstance = axios.create({
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // You can add auth token here if needed
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+  async (config: InternalAxiosRequestConfig) => {
+    // Get token from auth store
+    const accessToken = await useAuthStore.getState().auth.getAccessToken()
+
+    // Add token to request if it exists
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`
+    }
+
     return config
   },
   (error: AxiosError) => {
@@ -48,7 +52,18 @@ axiosInstance.interceptors.response.use(
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      // Handle response error
+
+      // Handle 401 errors globally - logout user
+      if (error.response.status === 401) {
+        // Don't logout on login endpoints
+        const isAuthEndpoint =
+          error.config?.url?.includes('/login') ||
+          error.config?.url?.includes('/refresh')
+
+        if (!isAuthEndpoint) {
+          useAuthStore.getState().auth.resetTokens()
+        }
+      }
     } else if (error.request) {
       // The request was made but no response was received
       // Handle request error

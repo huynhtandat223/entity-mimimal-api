@@ -1,10 +1,24 @@
-using CFW.AppHost.Features.Identity.Models;
+﻿using CFW.AppHost.Features.Identity.Models;
 using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
 using CFW.DynamicApi;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Add Cors policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000") // 👈 your frontend URL
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // if using cookies or auth headers
+    });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -22,6 +36,9 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<AppDbContext>();
 
 var app = builder.Build();
+
+//Use CORS policy
+app.UseCors("AllowFrontend"); // 👈 apply named policy globally
 
 app.UseAuthorization();
 app.MapIdentityApi<ApplicationUser>();

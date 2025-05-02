@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { AxiosError } from 'axios'
 import { useGetManageInfo } from '@/api/cfw-apphost/cfw-apphost'
+import { useIsAuthenticated } from '@/stores/authStore'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Use a ref to track if we've already redirected
   const hasRedirected = useRef(false)
+  const isAuthenticated = useIsAuthenticated()
 
   // Skip the auth check if we're already on the sign-in page
   const isSignInPage = window.location.pathname === '/sign-in'
@@ -12,14 +14,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isError, error } = useGetManageInfo({
     query: {
       retry: false,
-      // Disable the query on the sign-in page
-      enabled: !isSignInPage,
+      // Disable the query on the sign-in page or when not authenticated
+      enabled: !isSignInPage && isAuthenticated,
     },
   })
 
   useEffect(() => {
     // If we're already on the sign-in page or have already redirected, don't do anything
-    if (isSignInPage || hasRedirected.current) {
+    if (isSignInPage || hasRedirected.current || !isAuthenticated) {
       return
     }
 
@@ -39,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [isError, error, isSignInPage])
+  }, [isError, error, isSignInPage, isAuthenticated])
 
   return <>{children}</>
 }

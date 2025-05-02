@@ -1,3 +1,5 @@
+using CFW.AppHost.Features.Identity.Models;
+using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
 using CFW.DynamicApi;
 using Microsoft.EntityFrameworkCore;
@@ -13,13 +15,22 @@ builder.Services
         container.DefaultPageSize = 50;
     });
 
+//Authentication
+builder.Services.AddAuthorization();
+builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
+    .AddRoles<ApplicationRole>()
+    .AddEntityFrameworkStores<AppDbContext>();
+
 var app = builder.Build();
+
+app.UseAuthorization();
+app.MapIdentityApi<ApplicationUser>();
 
 await app.UseDynamicApi();
 
 using var scope = app.Services.CreateScope();
 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-await db.Database.EnsureCreatedAsync();
+await db.SeedSuperAdminAsync();
 
 app.Run();
 

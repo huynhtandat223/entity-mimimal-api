@@ -16,4 +16,6 @@ Performance Optimization
 
 Other Rules need to follow:
 
+This is a project use Vite React, use tanstack route and tanstack query.
+
 Don't be lazy, write all the code to implement features I ask for.

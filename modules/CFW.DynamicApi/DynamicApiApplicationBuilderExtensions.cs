@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData;
+using Scalar.AspNetCore;
 using System.Reflection;
 using System.Text;
 
@@ -17,6 +18,11 @@ public static class DynamicApiApplicationBuilderExtensions
         Action<ContainerConfiguration>? configureContainer = null,
         params Assembly[] assembliesToScan)
     {
+        services.AddOpenApi(o =>
+        {
+            //o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
+        });
+
         var containerConfig = new ContainerConfiguration
         {
             RoutePrefix = routePrefix
@@ -82,6 +88,9 @@ public static class DynamicApiApplicationBuilderExtensions
             var dispatcher = new DynamicApiDispatcher(registry, containerConfig);
             dispatcher.MapEndpoints(app);
         }
+
+        app.MapOpenApi();
+        app.MapScalarApiReference(_ => _.Servers = []);
 
         return app;
     }

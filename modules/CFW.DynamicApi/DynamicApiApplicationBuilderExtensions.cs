@@ -52,6 +52,8 @@ public static class DynamicApiApplicationBuilderExtensions
         //interceptors
         services.TryAddTransient(typeof(ODataFeatureInterceptor<>));
         services.TryAddTransient(typeof(DynamicEntityGroupBuilder<,>));
+        services.TryAddTransient(typeof(DynamicEntityGroupBuilder<,,>));
+
 
         //Odata services
         services.TryAddSingleton(_ =>

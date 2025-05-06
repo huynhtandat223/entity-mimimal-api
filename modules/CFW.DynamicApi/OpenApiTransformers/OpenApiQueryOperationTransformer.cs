@@ -77,10 +77,9 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
                 }
             };
         }
-        else if (context.Description.HttpMethod == HttpMethods.Post ||
-    context.Description.HttpMethod == HttpMethods.Put ||
-    context.Description.HttpMethod == HttpMethods.Patch ||
-    context.Description.HttpMethod == HttpMethods.Delete)
+        else if (context.Description.HttpMethod == HttpMethods.Post
+            || context.Description.HttpMethod == HttpMethods.Put
+            || context.Description.HttpMethod == HttpMethods.Patch)
         {
             operation.RequestBody = new OpenApiRequestBody
             {
@@ -98,6 +97,13 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
                 {
                     ["application/json"] = new OpenApiMediaType { Schema = responseSchema }
                 }
+            };
+        }
+        else if (context.Description.HttpMethod == HttpMethods.Delete)
+        {
+            operation.Responses["204"] = new OpenApiResponse
+            {
+                Description = "Successful deletion response"
             };
         }
 

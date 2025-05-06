@@ -8,9 +8,9 @@ namespace CFW.AppHost.Features.Identity.EndpointConfigurators;
 
 public class TenantsEndpointConfigurator : IEndpointConfigurator
 {
-    private readonly DynamicEntityGroupBuilder<Tenant, AppDbContext> _buider;
+    private readonly DynamicEntityGroupBuilder<Tenant, AppDbContext, Guid> _buider;
 
-    public TenantsEndpointConfigurator(DynamicEntityGroupBuilder<Tenant, AppDbContext> builder)
+    public TenantsEndpointConfigurator(DynamicEntityGroupBuilder<Tenant, AppDbContext, Guid> builder)
     {
         _buider = builder;
     }
@@ -18,11 +18,24 @@ public class TenantsEndpointConfigurator : IEndpointConfigurator
     public DynamicEntityGroupBuilder Configure()
     {
         return _buider
+            .AddUpdatingApi(api =>
+            {
+                api.ExcludeProperties<Tenant>(t => t.Id, t => t.Policies, t => t.Roles, t => t.TenantUsers);
+            })
+            .AddGetSingleApi(api =>
+            {
+                api.UseInterceptor<ODataFeatureInterceptor<Tenant>>();
+            })
+            .AddPartialUpdatingApi()
+            .AddDeleteApi()
             .AddQueryApi(api =>
             {
                 api.UseInterceptor<ODataFeatureInterceptor<Tenant>>();
             })
-            //.AddCreationApi()
-            .ExcludeProperties(x => x.ConnectionString);
+            .AddCreationApi(api =>
+            {
+                api.ExcludeProperties<Tenant>(t => t.Policies, t => t.Roles, t => t.TenantUsers);
+            })
+            .ExcludeProperties(x => x.CreatedAt, x => x.UpdatedAt!, x => x.ConnectionString);
     }
 }

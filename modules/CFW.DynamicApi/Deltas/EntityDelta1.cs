@@ -61,6 +61,4 @@ public class EntityDelta<TEntity> : EntityDelta
 
         return delta;
     }
-
-
 }

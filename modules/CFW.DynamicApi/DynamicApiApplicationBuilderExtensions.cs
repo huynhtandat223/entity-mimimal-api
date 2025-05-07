@@ -1,5 +1,5 @@
 ﻿using CFW.DynamicApi.Buiders;
-using CFW.DynamicApi.Interceptors;
+using CFW.DynamicApi.Interceptors.OData;
 using CFW.DynamicApi.OpenApiTransformers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.OData.Formatter;

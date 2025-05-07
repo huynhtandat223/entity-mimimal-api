@@ -2,7 +2,7 @@
 using CFW.AppHost.Features.Shared;
 using CFW.DynamicApi;
 using CFW.DynamicApi.Buiders;
-using CFW.DynamicApi.Interceptors;
+using CFW.DynamicApi.Interceptors.OData;
 
 namespace CFW.AppHost.Features.Identity.EndpointConfigurators;
 

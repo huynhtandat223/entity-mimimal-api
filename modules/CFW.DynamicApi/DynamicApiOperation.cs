@@ -3,7 +3,6 @@ using CFW.DynamicApi.Buiders;
 using CFW.DynamicApi.Interceptors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
@@ -98,13 +97,14 @@ public class DynamicApiOperation
             var result = await operation.Handler!(ctx);
 
             // Execute OnExecutedAsync for all interceptors
+            var interceptedResult = default(object?);
             foreach (var interceptor in interceptors)
             {
-                await interceptor.OnExecutedAsync(ctx, operation, result);
+                interceptedResult = await interceptor.OnExecutedAsync(ctx, operation, result);
             }
 
-            // Use the static instance of EmptyHttpResult instead of creating a new one
-            return EmptyHttpResult.Instance;
+            return interceptedResult;
+
         }).WithMetadata(operation);
     }
 
@@ -135,17 +135,13 @@ public class DynamicApiOperation<TKey> : DynamicApiOperation
             var result = await operation.ModelHandler!(ctx, key);
 
             // Execute OnExecutedAsync for all interceptors
+            object? interceptedResult = null;
             foreach (var interceptor in interceptors)
             {
-                await interceptor.OnExecutedAsync(ctx, operation, result);
+                interceptedResult = await interceptor.OnExecutedAsync(ctx, operation, result);
             }
 
-            if (result is IQueryable)
-            {
-                Console.WriteLine("Ingore queryable");
-                return EmptyHttpResult.Instance;
-            }
-            return result;
+            return interceptedResult;
         }).WithMetadata(operation);
     }
 }

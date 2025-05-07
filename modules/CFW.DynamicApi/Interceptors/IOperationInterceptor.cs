@@ -6,5 +6,5 @@ public interface IOperationInterceptor
 {
     Task OnExecutingAsync(HttpContext context, DynamicApiOperation operation) => Task.CompletedTask;
 
-    Task OnExecutedAsync(HttpContext context, DynamicApiOperation operation, object? result);
+    Task<object?> OnExecutedAsync(HttpContext context, DynamicApiOperation operation, object? result);
 }

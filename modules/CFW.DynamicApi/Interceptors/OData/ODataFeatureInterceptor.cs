@@ -1,10 +1,8 @@
 ﻿using CFW.Core.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Abstracts;
-using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -12,7 +10,7 @@ using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
 using System.Collections;
 
-namespace CFW.DynamicApi.Interceptors;
+namespace CFW.DynamicApi.Interceptors.OData;
 
 public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEntity : class
 {
@@ -22,39 +20,36 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
         _containerConfiguration = containerConfiguration;
     }
 
-    public async Task OnExecutedAsync(HttpContext httpContext, DynamicApiOperation operation, object? result)
+    public async Task<object?> OnExecutedAsync(HttpContext httpContext, DynamicApiOperation operation, object? result)
     {
         if (result is not IEnumerable enumerable)
-            return;
-
-        var formatter = httpContext.RequestServices.GetRequiredService<ODataOutputFormatter>();
+            return result;
 
         var odataFeature = CreateODataFeature(httpContext.RequestServices);
         httpContext.Features.Set(odataFeature);
 
-        var queryBuilder = new QueryBuilder(httpContext.Request.Query);
+        var queryBuilder = new QueryBuilder(httpContext.Request.Query)
+            .Where(q => !string.IsNullOrWhiteSpace(q.Value))
+            .ToDictionary(q => q.Key, q => q.Value);
+
         var maxTop = _containerConfiguration.DefaultPageSize;
         var availableTop = new string[] { "$top", "top" };
 
         var topQuery = httpContext.Request.Query.SingleOrDefault(x => availableTop.Contains(x.Key.ToLower().Trim()));
 
         if (topQuery.Key.IsNullOrWhiteSpace())
-        {
             queryBuilder.Add("$top", maxTop.ToString());
-        }
         else
         {
             if (!int.TryParse(topQuery.Value, out var topValue))
-            {
                 queryBuilder.Add("$top", maxTop.ToString());
-            }
             else if (topValue > maxTop)
             {
                 queryBuilder.Add("$top", maxTop.ToString());
             }
         }
 
-        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(httpContext.Request.QueryString.Value ?? string.Empty);
+        var query = queryBuilder;
 
         // Step 1: Find $select key
         var selectKey = query.Keys
@@ -81,9 +76,7 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
 
             // fallback if nothing valid selected
             if (selectedProps.Count == 0)
-            {
                 selectedProps = allowedPropDict.Values.ToList();
-            }
         }
         else
         {
@@ -104,16 +97,9 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
         var options = new ODataQueryOptions<TEntity>(odataQueryContext, httpContext.Request);
 
         var queryable = enumerable.AsQueryable();
-        options.ApplyTo(queryable);
+        result = options.ApplyTo(queryable);
 
-        var formatterContext = new OutputFormatterWriteContext(httpContext,
-            (stream, encoding) => new StreamWriter(stream, encoding),
-            result.GetType() ?? typeof(object), result)
-        {
-            ContentType = "application/json;odata.metadata=none",
-        };
-
-        await formatter.WriteAsync(formatterContext);
+        return await Task.FromResult(new ODataResult(result));
     }
 
     public IODataFeature CreateODataFeature(IServiceProvider serviceProvider)

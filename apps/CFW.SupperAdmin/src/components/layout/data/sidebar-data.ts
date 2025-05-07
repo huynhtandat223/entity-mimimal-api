@@ -53,7 +53,7 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Tenants',
-          url: '/',
+          url: '/tenants',
           icon: IconTransformPoint,
         },
       ],

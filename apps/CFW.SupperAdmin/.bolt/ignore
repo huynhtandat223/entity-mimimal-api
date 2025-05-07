@@ -1,2 +1,11 @@
 src/components/ui/*
-hooks/use-toast.ts
+src/features/*
+!src/features/tasks
+src/features/tasks/*
+!src/features/tasks/index.tsx
+!src/features/tasks/components
+!src/features/tasks/components/*
+!src/features/tasks/context
+!src/features/tasks/context/*
+!src/features/tasks/data
+!src/features/tasks/data/*

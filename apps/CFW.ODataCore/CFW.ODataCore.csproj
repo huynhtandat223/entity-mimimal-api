@@ -20,7 +20,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\modules\CFW.Core\CFW.Core.csproj" />
     <ProjectReference Include="..\..\modules\CFW.EntityApi\CFW.EntityApi.csproj" />
-    <ProjectReference Include="..\CFW.ServiceDefaults\CFW.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

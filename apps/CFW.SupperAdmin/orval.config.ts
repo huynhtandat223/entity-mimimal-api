@@ -1,7 +1,7 @@
 // orval.config.ts
 export default {
     api: {
-      input: 'http://localhost:5000/openapi/v1.json',
+      input: 'http://127.0.0.1:5000/openapi/v1.json',
       output: {
         target: './src/api',
         client: 'react-query',

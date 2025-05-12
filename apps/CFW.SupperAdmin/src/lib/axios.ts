@@ -6,7 +6,7 @@ import axios, {
 } from 'axios'
 
 // Get environment variables
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000'
 
 // Create axios instance with default config
 const axiosInstance: AxiosInstance = axios.create({

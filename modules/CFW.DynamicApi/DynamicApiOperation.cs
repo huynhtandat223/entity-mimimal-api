@@ -9,26 +9,6 @@ using System.Linq.Expressions;
 
 namespace CFW.DynamicApi;
 
-public enum PropertyType
-{
-    Scalar, Complex, Collection
-}
-
-public class PropertyMetadata
-{
-    public required string Name { set; get; }
-
-    public required Type ClrType { set; get; }
-
-    public required bool IsKey { set; get; }
-
-    public required bool IsRequired { set; get; }
-
-    public PropertyType PropertyType { set; get; } = PropertyType.Scalar;
-
-    public IEnumerable<PropertyMetadata>? ChildProperties { set; get; }
-}
-
 public class DynamicApiOperation
 {
     internal readonly List<string> _excludeProperties = new List<string>();
@@ -38,10 +18,7 @@ public class DynamicApiOperation
 
     public string Route { get; set; } = "/";
 
-    public Type? RequestType { get; set; }
-
-    public Type? ResponseType { get; set; }
-
+    [Obsolete("Not lexible enough")]
     public Func<HttpContext, Task<object?>>? Handler { get; set; }
 
     public Action<RouteGroupBuilder>? ConfigureRoute { get; set; }
@@ -97,7 +74,7 @@ public class DynamicApiOperation
             var result = await operation.Handler!(ctx);
 
             // Execute OnExecutedAsync for all interceptors
-            var interceptedResult = default(object?);
+            object? interceptedResult = result;
             foreach (var interceptor in interceptors)
             {
                 interceptedResult = await interceptor.OnExecutedAsync(ctx, operation, result);
@@ -135,13 +112,57 @@ public class DynamicApiOperation<TKey> : DynamicApiOperation
             var result = await operation.ModelHandler!(ctx, key);
 
             // Execute OnExecutedAsync for all interceptors
-            object? interceptedResult = null;
+            object? interceptedResult = result;
             foreach (var interceptor in interceptors)
             {
                 interceptedResult = await interceptor.OnExecutedAsync(ctx, operation, result);
             }
 
             return interceptedResult;
+        }).WithMetadata(operation);
+    }
+}
+
+public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
+{
+    private readonly Type _targetType;
+
+    public ApiOperation(Type targetType)
+    {
+        _targetType = targetType;
+    }
+    public override void MapApi(RouteGroupBuilder group)
+    {
+        var operation = this;
+        var route = group.MapMethods(operation.Route, [operation.HttpMethod], async (HttpContext ctx, TRequest request) =>
+        {
+            // Initialize interceptors once
+            var interceptors = operation.InterceptorFactories
+                .Select(factory => factory(ctx.RequestServices))
+                .ToList();
+
+            // Execute OnExecutingAsync for all interceptors
+            foreach (var interceptor in interceptors)
+            {
+                await interceptor.OnExecutingAsync(ctx, operation);
+            }
+
+            // Execute the handler
+            var handler = ActivatorUtilities.CreateInstance(ctx.RequestServices, _targetType)
+            as IApiOperationHandler<TRequest, TResponse>;
+            var result = await handler!.Handle(request, ctx.RequestAborted);
+            if (!result.IsSuccess)
+                return TypedResults.BadRequest(result.Message);
+
+            // Execute OnExecutedAsync for all interceptors
+            object? interceptedResult = result.Data;
+            foreach (var interceptor in interceptors)
+            {
+                interceptedResult = await interceptor.OnExecutedAsync(ctx, operation, result);
+            }
+
+            return interceptedResult;
+
         }).WithMetadata(operation);
     }
 }

@@ -20,7 +20,7 @@ public class DynamicEntityGroupBuilder
 
     public virtual JsonConverterFactory CreateJsonConverterFactory(IServiceProvider serviceProvider) { throw new NotImplementedException(); }
 
-    public IReadOnlyCollection<DynamicApiOperation> Operations => _operations.AsReadOnly();
+    public List<DynamicApiOperation> Operations => _operations;
 
     internal virtual IEnumerable<DynamicApiOperation> Build()
     {
@@ -48,6 +48,8 @@ public class DynamicEntityGroupBuilder
     }
 
     public IEnumerable<PropertyMetadata>? Properties { set; get; }
+
+
 }
 
 public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder where TEntity : class
@@ -57,6 +59,7 @@ public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder wher
         RouteName = typeof(TEntity).Name.Pluralize().ToLowerInvariant();
     }
 
+    [Obsolete]
     public DynamicEntityGroupBuilder<TEntity> WithRouteName(string routeName)
     {
         RouteName = routeName;
@@ -69,6 +72,7 @@ public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder wher
         return this;
     }
 
+    [Obsolete]
     public DynamicEntityGroupBuilder<TEntity> WithHttpMethod(HttpMethod httpMethod)
     {
         _httpMethod = httpMethod;

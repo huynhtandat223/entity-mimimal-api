@@ -38,22 +38,42 @@ public static class DynamicApiApplicationBuilderExtensions
             ? assembliesToScan
             : [Assembly.GetEntryAssembly()!];
 
-        var endpointConfigurators = assembliesToScan
+        var types = assembliesToScan
             .SelectMany(a => a.GetTypes())
-            .Where(t => t.IsClass && !t.IsAbstract
-                     && typeof(IEndpointConfigurator).IsAssignableFrom(t))
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .ToList();
+
+        //Register endpoint configurators
+        var endpointConfigurators = types
+            .Where(x => typeof(IEndpointConfigurator).IsAssignableFrom(x))
             .ToList();
 
         foreach (var type in endpointConfigurators)
         {
-            services.TryAddTransient(typeof(IEndpointConfigurator), type);
+            services.AddTransient(typeof(IEndpointConfigurator), type);
         }
+
+        //Register api attributes
+        var operationAttributes = types
+            .Where(x => x.GetCustomAttribute<ApiOperationAttribute>() is not null)
+            .Select(x => new
+            {
+                Attribute = x.GetCustomAttribute<ApiOperationAttribute>()!,
+                Type = x
+            })
+            .ToList();
+        foreach (var attr in operationAttributes)
+        {
+            attr.Attribute.TargetType = attr.Type;
+        }
+        services.AddSingleton(operationAttributes.Select(x => x.Attribute).ToList());
 
         //interceptors
         services.TryAddTransient(typeof(ODataFeatureInterceptor<>));
+
+        services.TryAddTransient(typeof(DynamicEntityGroupBuilder));
         services.TryAddTransient(typeof(DynamicEntityGroupBuilder<,>));
         services.TryAddTransient(typeof(DynamicEntityGroupBuilder<,,>));
-
 
         //Odata services
         services.TryAddSingleton(_ =>
@@ -63,6 +83,8 @@ public static class DynamicApiApplicationBuilderExtensions
 
             return formatter;
         });
+
+        services.TryAddSingleton<DynamicApiRegistry>();
 
         return services;
     }
@@ -78,7 +100,7 @@ public static class DynamicApiApplicationBuilderExtensions
 
         foreach (var containerConfig in containerConfigs)
         {
-            var registry = new DynamicApiRegistry();
+            var registry = scope.ServiceProvider.GetRequiredService<DynamicApiRegistry>();
 
             var configurators = scope.ServiceProvider.GetServices<IEndpointConfigurator>();
             foreach (var configurator in configurators)

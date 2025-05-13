@@ -2,7 +2,19 @@
 
 namespace CFW.Core.Results;
 
-public class Result
+public interface IResult
+{
+    public bool IsSuccess { get; set; }
+
+    public string? Message { get; set; }
+}
+
+public interface IResult<TResult> : IResult
+{
+    public TResult? Data { set; get; }
+}
+
+public class Result : IResult
 {
     public bool IsSuccess { get; set; }
 
@@ -20,7 +32,7 @@ public class Result
     public object? CustomResult { get; set; }
 }
 
-public class Result<T> : Result
+public class Result<T> : Result, IResult<T>
 {
     public new T? Data
     {

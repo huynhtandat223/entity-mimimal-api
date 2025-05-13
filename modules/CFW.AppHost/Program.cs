@@ -1,7 +1,10 @@
-﻿using CFW.AppHost.Features.Identity.Services.Extensions;
+﻿global using CFW.Core.Results;
+using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
+using CFW.AppHost.Infrastructures.IXBrowserGateway;
 using CFW.DynamicApi;
 using Microsoft.EntityFrameworkCore;
+using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +37,12 @@ builder.Services
 //    .AddRoles<ApplicationRole>()
 //    .AddEntityFrameworkStores<AppDbContext>();
 
+
+//Refit for IXBrowserGateway
+builder.Services
+    .AddRefitClient<IProfileGateway>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("http://127.0.0.1:53200/api/v2"));
+
 var app = builder.Build();
 
 //Use CORS policy
@@ -43,6 +52,7 @@ app.UseCors("AllowFrontend"); // 👈 apply named policy globally
 //app.MapIdentityApi<ApplicationUser>();
 
 await app.UseDynamicApi();
+
 
 using var scope = app.Services.CreateScope();
 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

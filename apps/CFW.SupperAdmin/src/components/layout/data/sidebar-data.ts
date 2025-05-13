@@ -1,5 +1,6 @@
 import {
   IconBarrierBlock,
+  IconBrowser,
   IconBrowserCheck,
   IconBug,
   IconChecklist,
@@ -55,6 +56,16 @@ export const sidebarData: SidebarData = {
           title: 'Tenants',
           url: '/tenants',
           icon: IconTransformPoint,
+        },
+      ],
+    },
+    {
+      title: 'MMO',
+      items: [
+        {
+          title: 'Browser profiles',
+          url: '/browser-profiles',
+          icon: IconBrowser,
         },
       ],
     },

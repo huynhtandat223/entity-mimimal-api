@@ -163,6 +163,8 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
 
             return interceptedResult;
 
-        }).WithMetadata(operation);
+        }).Produces<TResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .WithMetadata(operation);
     }
 }

@@ -30,6 +30,7 @@ import { Route as AuthenticatedTasksIndexImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsIndexImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedHelpCenterIndexImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedChatsIndexImport } from './routes/_authenticated/chats/index'
+import { Route as AuthenticatedBrowserProfilesIndexImport } from './routes/_authenticated/browser-profiles/index'
 import { Route as AuthenticatedAppsIndexImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedTenantsTenantIdImport } from './routes/_authenticated/tenants/$tenantId'
 import { Route as AuthenticatedSettingsNotificationsImport } from './routes/_authenticated/settings/notifications'
@@ -156,6 +157,13 @@ const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexImport.update({
   path: '/chats/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+
+const AuthenticatedBrowserProfilesIndexRoute =
+  AuthenticatedBrowserProfilesIndexImport.update({
+    id: '/browser-profiles/',
+    path: '/browser-profiles/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexImport.update({
   id: '/apps/',
@@ -335,6 +343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppsIndexImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/browser-profiles/': {
+      id: '/_authenticated/browser-profiles/'
+      path: '/browser-profiles'
+      fullPath: '/browser-profiles'
+      preLoaderRoute: typeof AuthenticatedBrowserProfilesIndexImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/chats/': {
       id: '/_authenticated/chats/'
       path: '/chats'
@@ -410,6 +425,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedTenantsTenantIdRoute: typeof AuthenticatedTenantsTenantIdRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
+  AuthenticatedBrowserProfilesIndexRoute: typeof AuthenticatedBrowserProfilesIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
@@ -422,6 +438,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedTenantsTenantIdRoute: AuthenticatedTenantsTenantIdRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
+  AuthenticatedBrowserProfilesIndexRoute:
+    AuthenticatedBrowserProfilesIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
@@ -452,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/tenants/$tenantId': typeof AuthenticatedTenantsTenantIdRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
+  '/browser-profiles': typeof AuthenticatedBrowserProfilesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -478,6 +497,7 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/tenants/$tenantId': typeof AuthenticatedTenantsTenantIdRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
+  '/browser-profiles': typeof AuthenticatedBrowserProfilesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -507,6 +527,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/tenants/$tenantId': typeof AuthenticatedTenantsTenantIdRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
+  '/_authenticated/browser-profiles/': typeof AuthenticatedBrowserProfilesIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -537,6 +558,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/tenants/$tenantId'
     | '/apps'
+    | '/browser-profiles'
     | '/chats'
     | '/help-center'
     | '/settings/'
@@ -562,6 +584,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/tenants/$tenantId'
     | '/apps'
+    | '/browser-profiles'
     | '/chats'
     | '/help-center'
     | '/settings'
@@ -589,6 +612,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/tenants/$tenantId'
     | '/_authenticated/apps/'
+    | '/_authenticated/browser-profiles/'
     | '/_authenticated/chats/'
     | '/_authenticated/help-center/'
     | '/_authenticated/settings/'
@@ -656,6 +680,7 @@ export const routeTree = rootRoute
         "/_authenticated/",
         "/_authenticated/tenants/$tenantId",
         "/_authenticated/apps/",
+        "/_authenticated/browser-profiles/",
         "/_authenticated/chats/",
         "/_authenticated/help-center/",
         "/_authenticated/tasks/",
@@ -730,6 +755,10 @@ export const routeTree = rootRoute
     },
     "/_authenticated/apps/": {
       "filePath": "_authenticated/apps/index.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/browser-profiles/": {
+      "filePath": "_authenticated/browser-profiles/index.tsx",
       "parent": "/_authenticated"
     },
     "/_authenticated/chats/": {

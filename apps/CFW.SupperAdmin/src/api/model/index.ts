@@ -6,6 +6,9 @@
  */
 
 export * from './accessTokenResponse';
+export * from './createProfileError';
+export * from './createProfileRequest';
+export * from './createProfileResponse';
 export * from './forgotPasswordRequest';
 export * from './getApiV1Tenants200';
 export * from './getApiV1Tenants200Value';
@@ -38,6 +41,11 @@ export * from './postApiV1Tenants200';
 export * from './postApiV1Tenants200Value';
 export * from './postApiV1TenantsBody';
 export * from './postLoginParams';
+export * from './profileInfo';
+export * from './profileListData';
+export * from './profileListRequest';
+export * from './proxyConfig';
+export * from './proxyConfigProxyDataJsonFormat';
 export * from './putApiV1TenantsKey200';
 export * from './putApiV1TenantsKey200Value';
 export * from './putApiV1TenantsKeyBody';

@@ -49,7 +49,11 @@ public class DynamicEntityGroupBuilder
 
     public IEnumerable<PropertyMetadata>? Properties { set; get; }
 
-
+    public DynamicEntityGroupBuilder WithRouteName(string routeName)
+    {
+        RouteName = routeName;
+        return this;
+    }
 }
 
 public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder where TEntity : class
@@ -57,13 +61,6 @@ public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder wher
     protected DynamicEntityGroupBuilder()
     {
         RouteName = typeof(TEntity).Name.Pluralize().ToLowerInvariant();
-    }
-
-    [Obsolete]
-    public DynamicEntityGroupBuilder<TEntity> WithRouteName(string routeName)
-    {
-        RouteName = routeName;
-        return this;
     }
 
     public DynamicEntityGroupBuilder<TEntity> WithOperation(DynamicApiOperation apiOperation)

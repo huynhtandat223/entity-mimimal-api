@@ -134,8 +134,12 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
     public override void MapApi(RouteGroupBuilder group)
     {
         var operation = this;
-        var route = group.MapMethods(operation.Route, [operation.HttpMethod], async (HttpContext ctx, TRequest request) =>
+        var route = group.MapMethods(operation.Route, [operation.HttpMethod]
+            , async (HttpContext ctx, QueryRequest<TRequest> request) =>
         {
+            if (request is null)
+                return Results.BadRequest("Invalid Request");
+
             // Initialize interceptors once
             var interceptors = operation.InterceptorFactories
                 .Select(factory => factory(ctx.RequestServices))
@@ -149,8 +153,13 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
 
             // Execute the handler
             var handler = ActivatorUtilities.CreateInstance(ctx.RequestServices, _targetType)
-            as IApiOperationHandler<TRequest, TResponse>;
-            var result = await handler!.Handle(request, ctx.RequestAborted);
+            as IRequestHandler<TRequest, TResponse>;
+            var requestContext = new RequestModel<TRequest>
+            {
+                Model = request.QueryModel!,
+                ServiceProvider = ctx.RequestServices
+            };
+            var result = await handler!.Handle(requestContext, ctx.RequestAborted);
             if (!result.IsSuccess)
                 return TypedResults.BadRequest(result.Message);
 

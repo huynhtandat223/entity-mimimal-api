@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.DynamicApi", "modules\C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.AppHost", "modules\CFW.AppHost\CFW.AppHost.csproj", "{D55A4F38-D765-49B6-9745-949F5795FB49}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.EntityApi", "modules\CFW.EntityApi\CFW.EntityApi.csproj", "{5815DDED-6A39-4B55-B6CD-46DCF3F2B5F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{D55A4F38-D765-49B6-9745-949F5795FB49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D55A4F38-D765-49B6-9745-949F5795FB49}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D55A4F38-D765-49B6-9745-949F5795FB49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5815DDED-6A39-4B55-B6CD-46DCF3F2B5F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5815DDED-6A39-4B55-B6CD-46DCF3F2B5F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5815DDED-6A39-4B55-B6CD-46DCF3F2B5F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5815DDED-6A39-4B55-B6CD-46DCF3F2B5F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

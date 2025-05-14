@@ -23,12 +23,14 @@ public class ApiOperationAttribute : Attribute
     }
 }
 
-public interface IApiOperationHandler<TRequest, TResponse>
+public interface IRequestHandler<TRequest, TResponse>
 {
-    public Task<IResult<TResponse>> Handle(TRequest request, CancellationToken cancellationToken);
+    public Task<IResult<TResponse>> Handle(RequestModel<TRequest> request, CancellationToken cancellationToken);
 }
 
-public interface IApiOperationHandler<TResponse>
+public class RequestModel<T>
 {
-    public Task<TResponse> Handle(CancellationToken cancellationToken);
+    public IServiceProvider ServiceProvider { get; set; } = null!;
+
+    public T Model { get; set; } = default!;
 }

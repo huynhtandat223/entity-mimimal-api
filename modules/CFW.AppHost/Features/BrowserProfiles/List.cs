@@ -1,12 +1,11 @@
 ﻿using CFW.AppHost.Infrastructures.IXBrowserGateway;
 using CFW.AppHost.Infrastructures.IXBrowserGateway.Models;
-using CFW.Core.Utils;
 using CFW.DynamicApi;
 
 namespace CFW.AppHost.Features.BrowserProfiles;
 
 [ApiOperation("browser-profiles", RouteName = "list")]
-public class BrowserProfilesList : IApiOperationHandler<ProfileListRequest, ProfileListData>
+public class BrowserProfilesList : IRequestHandler<ProfileListRequest, ProfileListData>
 {
     private readonly IProfileGateway _profileGateway;
 
@@ -15,10 +14,10 @@ public class BrowserProfilesList : IApiOperationHandler<ProfileListRequest, Prof
         _profileGateway = profileGateway;
     }
 
-    public async Task<IResult<ProfileListData>> Handle(ProfileListRequest request, CancellationToken cancellationToken)
+    public async Task<IResult<ProfileListData>> Handle(RequestModel<ProfileListRequest> request, CancellationToken cancellationToken)
     {
         var result = new ProfileListData();
-        var profiles = await _profileGateway.GetProfileListAsync(request);
+        var profiles = await _profileGateway.GetProfileListAsync(request.Model);
 
         if (profiles.Error?.Code != 0)
         {

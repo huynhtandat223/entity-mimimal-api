@@ -38,6 +38,20 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
 
         operation.Parameters ??= new List<OpenApiParameter>();
 
+        if (apiOperation.Route.Contains("{id}"))
+        {
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = "id",
+                In = ParameterLocation.Path,
+                Required = true,
+                Schema = new OpenApiSchema
+                {
+                    Type = "string"
+                }
+            });
+        }
+
         var jsonOptions = context.ApplicationServices.GetService<IOptions<JsonOptions>>();
         var propertyNamingPolicy = jsonOptions!.Value.SerializerOptions.PropertyNamingPolicy;
 

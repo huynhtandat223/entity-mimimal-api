@@ -10,7 +10,6 @@ public static class IdentitySeeder
     public static async Task SeedSuperAdminAsync(this AppDbContext context)
     {
         await context.Database.EnsureCreatedAsync();
-        await context.Database.MigrateAsync();
 
         var supperAdminName = "admin@gmail.com";
         var supperAdminRole = "SuperAdmin";

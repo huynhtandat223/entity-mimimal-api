@@ -38,7 +38,7 @@ public class DynamicApiRegistry
             {
                 var targetType = operation.TargetType;
                 var operationInteface = operation.TargetType!.GetInterfaces()
-                    .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IApiOperationHandler<,>));
+                    .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
                 var requestType = operationInteface?.GetGenericArguments()[0];
                 var responseType = operationInteface?.GetGenericArguments()[1];
 

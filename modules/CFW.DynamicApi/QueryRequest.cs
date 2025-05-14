@@ -42,6 +42,7 @@ public class QueryRequest<TRequest>
         if (request.ContentLength > 0 &&
             request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
         {
+            request.EnableBuffering();
             using var reader = new StreamReader(request.Body);
             var bodyText = await reader.ReadToEndAsync();
             if (!string.IsNullOrWhiteSpace(bodyText))

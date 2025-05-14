@@ -1,7 +1,6 @@
 ﻿using CFW.AppHost.Infrastructures.IXBrowserGateway;
 using CFW.AppHost.Infrastructures.IXBrowserGateway.Models;
 using CFW.DynamicApi;
-using Refit;
 
 namespace CFW.AppHost.Features.BrowserProfiles;
 
@@ -10,9 +9,10 @@ public class BrowserProfilesCreate : IRequestHandler<CreateProfileRequest, Creat
 {
     public async Task<IResult<CreateProfileResponse>> Handle(RequestModel<CreateProfileRequest> request, CancellationToken cancellationToken)
     {
+        var profileGateway = request.ServiceProvider.GetRequiredService<IProfileGateway>();
+
         var result = new CreateProfileResponse();
-        var gitHubApi = RestService.For<IProfileGateway>("http://127.0.0.1:53200/api/v2");
-        result = await gitHubApi.CreateProfileAsync(request.Model);
+        result = await profileGateway.CreateProfileAsync(request.Model);
 
         if (result.Error?.Code != 0)
         {

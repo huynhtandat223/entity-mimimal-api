@@ -1,17 +1,31 @@
 import { ReactNode } from 'react'
+import { LucideIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Header } from './header'
 import { Main } from './main'
 
+interface PageButtonDef {
+  text: string
+  icon: LucideIcon
+  onClick: () => void
+}
+
 interface PageLayoutProps {
   children: ReactNode
   title: string
   description?: string
+  pageButtonDefs?: PageButtonDef[]
 }
 
-export function PageLayout({ children, title, description }: PageLayoutProps) {
+export function PageLayout({
+  children,
+  title,
+  description,
+  pageButtonDefs,
+}: PageLayoutProps) {
   return (
     <>
       <Header fixed>
@@ -30,6 +44,15 @@ export function PageLayout({ children, title, description }: PageLayoutProps) {
               <p className='text-muted-foreground'>{description}</p>
             )}
           </div>
+          {pageButtonDefs && (
+            <div className='flex gap-2'>
+              {pageButtonDefs.map((def, index) => (
+                <Button key={index} className='space-x-1' onClick={def.onClick}>
+                  <span>{def.text}</span> <def.icon size={18} />
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
         <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
           {children}

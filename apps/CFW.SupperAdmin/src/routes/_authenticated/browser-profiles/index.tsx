@@ -1,17 +1,22 @@
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ProfileInfo } from '@/api/model'
 import { axiosInstance } from '@/lib/axios'
 import { CommonTable } from '@/components/ui/common-table/common-table'
 import { PageLayout } from '@/components/layout/PageLayout'
+import { BrowserProfilesDialogs } from '@/features/browser-profiles/components/browser-profiles-dialogs'
+import BrowserProfilesProvider, {
+  useBrowserProfiles,
+} from '@/features/browser-profiles/context/browser-profiles-context'
 
 export const Route = createFileRoute('/_authenticated/browser-profiles/')({
   component: BrowserProfilesPage,
 })
 
-function BrowserProfilesPage() {
+function BrowserProfilesContent() {
+  const { setOpen } = useBrowserProfiles()
   const openProfileMutation = useMutation({
     mutationFn: async (profileId: number) => {
       await axiosInstance.post(`/api/v1/browser-profiles/open`, {
@@ -33,27 +38,45 @@ function BrowserProfilesPage() {
   }
 
   return (
-    <PageLayout
-      title='Browser Profiles'
-      description='Manage your browser profiles'
-    >
-      <CommonTable
-        apiUrl='/api/v1/browser-profiles/list'
-        schemaUrl='/openapi/v1.json'
-        schemaName='ProfileInfo'
-        columns={[
+    <>
+      <PageLayout
+        title='Browser Profiles'
+        description='Manage your browser profiles'
+        pageButtonDefs={[
           {
-            type: 'action',
-            actions: [
-              {
-                text: 'Open',
-                Icon: ExternalLink,
-                onClick: handleOpenProfile,
-              },
-            ],
+            text: 'Create',
+            icon: Plus,
+            onClick: () => setOpen('create'),
           },
         ]}
-      />
-    </PageLayout>
+      >
+        <CommonTable
+          apiUrl='/api/v1/browser-profiles/list'
+          schemaUrl='/openapi/v1.json'
+          schemaName='ProfileInfo'
+          columns={[
+            {
+              type: 'action',
+              actions: [
+                {
+                  text: 'Open',
+                  Icon: ExternalLink,
+                  onClick: handleOpenProfile,
+                },
+              ],
+            },
+          ]}
+        />
+      </PageLayout>
+      <BrowserProfilesDialogs />
+    </>
+  )
+}
+
+function BrowserProfilesPage() {
+  return (
+    <BrowserProfilesProvider>
+      <BrowserProfilesContent />
+    </BrowserProfilesProvider>
   )
 }

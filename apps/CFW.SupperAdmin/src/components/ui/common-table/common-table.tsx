@@ -1,12 +1,5 @@
-import { ReactNode, useCallback, useEffect, useState } from 'react'
-import React from 'react'
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  Cross2Icon,
-  DotsHorizontalIcon,
-  MixerHorizontalIcon,
-} from '@radix-ui/react-icons'
+import React, { useCallback, useEffect, useState } from 'react'
+import { ExternalLinkIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import {
   flexRender,
@@ -19,11 +12,10 @@ import {
   useReactTable,
   type ColumnDef,
   type ColumnFiltersState,
-  type Row,
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
-import { LucideIcon } from 'lucide-react'
+import { LucideIcon, MoreHorizontal } from 'lucide-react'
 import { axiosInstance } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,23 +24,6 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -99,16 +74,24 @@ export interface ActionColumnDef {
   onClick: (row: any) => void
 }
 
+interface ActionColumn {
+  type: 'action'
+  props: {
+    actions: ActionColumnDef[]
+  }
+}
+
 export interface CommonTableProps {
-  columns?: (
-    | string
-    | React.ReactElement
-    | { type: 'action'; actions: ActionColumnDef[] }
-  )[]
+  columns?: (string | React.ReactElement | ActionColumn)[]
   apiUrl: string
   queryKey?: string[]
   schemaUrl: string
   schemaName: string
+}
+
+interface RowActionProps {
+  row: any
+  onOpen?: (row: any) => void
 }
 
 export function CommonTable({
@@ -186,7 +169,44 @@ export function CommonTable({
         columns.push({
           id: String(id),
           header: 'Actions',
-          cell: ({ row }) => React.cloneElement(col, { row: row.original }),
+          cell: ({ row }) => {
+            const element = col as React.ReactElement<RowActionProps>
+            return React.cloneElement(element, {
+              row: row.original,
+              onOpen: element.props.onOpen,
+            })
+          },
+        })
+      } else if (
+        typeof col === 'object' &&
+        'type' in col &&
+        col.type === 'action'
+      ) {
+        const actionCol = col as ActionColumn
+        columns.push({
+          id: 'actions',
+          header: 'Actions',
+          cell: ({ row }) => (
+            <ContextMenu>
+              <ContextMenuTrigger asChild>
+                <Button variant='ghost' className='h-8 w-8 p-0'>
+                  <MoreHorizontal className='h-4 w-4' />
+                  <span className='sr-only'>Open menu</span>
+                </Button>
+              </ContextMenuTrigger>
+              <ContextMenuContent className='w-[160px]'>
+                {actionCol.props.actions.map((action, index) => (
+                  <ContextMenuItem
+                    key={index}
+                    onClick={() => action.onClick(row.original)}
+                  >
+                    <action.Icon className='mr-2 h-4 w-4' />
+                    {action.text}
+                  </ContextMenuItem>
+                ))}
+              </ContextMenuContent>
+            </ContextMenu>
+          ),
         })
       }
     }
@@ -270,44 +290,51 @@ export function CommonTable({
                     ))}
                   </TableRow>
                 </ContextMenuTrigger>
-
                 {hasContextMenu && (
                   <ContextMenuContent className='w-[160px]'>
                     {/* Classic action definitions */}
                     {customColumns
                       .filter(
-                        (
-                          col
-                        ): col is {
-                          type: 'action'
-                          actions: ActionColumnDef[]
-                        } =>
+                        (col): col is ActionColumn =>
                           typeof col === 'object' &&
                           'type' in col &&
-                          col.type === 'action'
+                          col.type === 'action' &&
+                          'props' in col &&
+                          'actions' in (col as ActionColumn).props
                       )
                       .flatMap((col) =>
-                        col.actions.map((action, index) => (
-                          <ContextMenuItem
-                            key={index}
-                            onClick={() => action.onClick(row.original)}
-                          >
-                            <action.Icon className='mr-2 h-4 w-4' />
-                            {action.text}
-                          </ContextMenuItem>
-                        ))
+                        (col as ActionColumn).props.actions.map(
+                          (action, index) => (
+                            <ContextMenuItem
+                              key={index}
+                              onClick={() => action.onClick(row.original)}
+                            >
+                              <action.Icon className='mr-2 h-4 w-4' />
+                              {action.text}
+                            </ContextMenuItem>
+                          )
+                        )
                       )}
 
                     {/* JSX-based elements like <RowAction /> */}
                     {customColumns
                       .filter((col) => React.isValidElement(col))
                       .map((element, i) => {
-                        const Comp = element as React.ReactElement<{ row: any }>
-                        return (
-                          <React.Fragment key={`jsx-${i}`}>
-                            {React.cloneElement(Comp, { row: row.original })}
-                          </React.Fragment>
-                        )
+                        const Comp =
+                          element as React.ReactElement<RowActionProps>
+                        const props = Comp.props
+                        if (props.onOpen) {
+                          return (
+                            <ContextMenuItem
+                              key={`jsx-${i}`}
+                              onClick={() => props.onOpen?.(row.original)}
+                            >
+                              <ExternalLinkIcon className='mr-2 h-4 w-4' />
+                              Open
+                            </ContextMenuItem>
+                          )
+                        }
+                        return null
                       })}
                   </ContextMenuContent>
                 )}

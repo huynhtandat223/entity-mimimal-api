@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { Play, Trash } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ProfileInfo } from '@/api/model'
 import { axiosInstance } from '@/lib/axios'
@@ -24,9 +25,27 @@ function BrowserProfilesContent() {
     },
   })
 
+  const deleteProfileMutation = useMutation({
+    mutationFn: async (profileId: number) => {
+      await axiosInstance.delete(`/api/v1/browser-profiles/${profileId}`)
+    },
+    onSuccess: () => {
+      toast.success('Profile deleted successfully')
+    },
+    onError: () => {
+      toast.error('Failed to delete profile')
+    },
+  })
+
   const handleOpenProfile = async (row: ProfileInfo) => {
     if (row.profileId) {
       openProfileMutation.mutate(row.profileId)
+    }
+  }
+
+  const handleDeleteProfile = async (row: ProfileInfo) => {
+    if (row.profileId) {
+      deleteProfileMutation.mutate(row.profileId)
     }
   }
 
@@ -61,9 +80,20 @@ function BrowserProfilesContent() {
           'id',
           'name',
           {
-            type: 'RowAction',
+            type: 'action',
             props: {
-              onOpen: 'handleOpenProfile',
+              actions: [
+                {
+                  text: 'Open',
+                  Icon: Play,
+                  onClick: (row: ProfileInfo) => handleOpenProfile(row),
+                },
+                {
+                  text: 'Delete',
+                  Icon: Trash,
+                  onClick: (row: ProfileInfo) => handleDeleteProfile(row),
+                },
+              ],
             },
           },
         ],
@@ -73,12 +103,7 @@ function BrowserProfilesContent() {
 
   return (
     <>
-      <ComponentSchemas
-        schema={schema}
-        functions={{
-          handleOpenProfile,
-        }}
-      />
+      <ComponentSchemas schema={schema} />
     </>
   )
 }

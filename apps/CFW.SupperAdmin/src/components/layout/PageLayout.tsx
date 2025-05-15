@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import React from 'react'
 import { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -7,11 +8,7 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { Header } from './header'
 import { Main } from './main'
 
-interface PageButtonDef {
-  text: string
-  icon: LucideIcon
-  onClick: () => void
-}
+export type PageButtonDef = React.ReactElement
 
 interface PageLayoutProps {
   children: ReactNode
@@ -46,10 +43,8 @@ export function PageLayout({
           </div>
           {pageButtonDefs && (
             <div className='flex gap-2'>
-              {pageButtonDefs.map((def, index) => (
-                <Button key={index} className='space-x-1' onClick={def.onClick}>
-                  <span>{def.text}</span> <def.icon size={18} />
-                </Button>
+              {pageButtonDefs.map((btn, index) => (
+                <React.Fragment key={index}>{btn}</React.Fragment>
               ))}
             </div>
           )}

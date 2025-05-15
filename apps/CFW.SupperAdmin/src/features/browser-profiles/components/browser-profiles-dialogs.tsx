@@ -1,10 +1,8 @@
-import { useBrowserProfiles } from '../context/browser-profiles-context'
+import { useCommonState } from '@/stores/commonStateStore'
 import { BrowserProfilesCreateDialog } from './browser-profiles-create-dialog'
 
 export function BrowserProfilesDialogs() {
-  const { open, setOpen } = useBrowserProfiles()
-
-  console.log('Dialog state:', open)
+  const { open, setOpen } = useCommonState().getState('browserProfiles') // ✅ Use common state with key
 
   return (
     <>

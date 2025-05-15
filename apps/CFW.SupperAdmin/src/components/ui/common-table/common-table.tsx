@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useEffect, useState } from 'react'
+import React from 'react'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -92,23 +93,18 @@ interface SchemaProperty {
   $ref?: string
 }
 
-export interface TableDataResponse {
-  data: any[]
-  total: number
-}
-
 export interface ActionColumnDef {
   text: string
   Icon: LucideIcon
   onClick: (row: any) => void
 }
 
-type SimpleColumnDef = string | ((row: any) => ReactNode)
-type ActionColumn = { type: 'action'; actions: ActionColumnDef[] }
-type ColumnDefinition = SimpleColumnDef | ActionColumn
-
 export interface CommonTableProps {
-  columns?: ColumnDefinition[]
+  columns?: (
+    | string
+    | React.ReactElement
+    | { type: 'action'; actions: ActionColumnDef[] }
+  )[]
   apiUrl: string
   queryKey?: string[]
   schemaUrl: string
@@ -116,7 +112,7 @@ export interface CommonTableProps {
 }
 
 export function CommonTable({
-  columns: customColumns,
+  columns: customColumns = [],
   apiUrl,
   queryKey = ['table'],
   schemaUrl,
@@ -135,27 +131,16 @@ export function CommonTable({
   useEffect(() => {
     const loadSchema = async () => {
       if (!schemaUrl || !schemaName) return
-
       try {
         const response = await axiosInstance.get(schemaUrl)
         const schema = response.data as OpenAPISchema
-        console.log('Loaded schema:', schema)
-
-        // Find the schema definition
         const schemaDef = schema.components?.schemas?.[schemaName]
-        console.log('Schema definition:', schemaDef)
-
-        if (!schemaDef?.properties) {
-          console.error(`Schema ${schemaName} not found or has no properties`)
-          return
-        }
-
+        if (!schemaDef?.properties) return
         setSchemaProperties(schemaDef.properties)
       } catch (error) {
         console.error('Error loading schema:', error)
       }
     }
-
     loadSchema()
   }, [schemaUrl, schemaName])
 
@@ -175,67 +160,44 @@ export function CommonTable({
   })
 
   const generateColumns = useCallback(() => {
-    if (!schemaProperties) return []
-
-    const columns: ColumnDef<any>[] = Object.entries(schemaProperties).map(
-      ([key, prop]) => ({
-        accessorKey: key,
-        id: key,
-        header: prop.description || key.charAt(0).toUpperCase() + key.slice(1),
-        cell: ({ row }: { row: Row<any> }) => {
-          const value = row.getValue(key)
-          if (value === null || value === undefined) return '-'
-          if (Array.isArray(value)) return value.join(', ')
-          if (key === 'lastOpenTime' && typeof value === 'number') {
-            return new Date(value).toLocaleString()
-          }
-          if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-          return String(value)
-        },
-      })
-    )
-
-    // Add actions column if custom columns include action type
-    const actionColumn = customColumns?.find(
-      (col): col is ActionColumn =>
-        typeof col === 'object' && 'type' in col && col.type === 'action'
-    )
-
-    if (actionColumn) {
-      columns.push({
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }: { row: Row<any> }) => {
-          return (
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant='ghost'
-                  className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
-                >
-                  <DotsHorizontalIcon className='h-4 w-4' />
-                  <span className='sr-only'>Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='end' className='w-[160px]'>
-                {actionColumn.actions.map((action, index) => (
-                  <DropdownMenuItem
-                    key={index}
-                    onClick={() => action.onClick(row.original)}
-                  >
-                    <action.Icon className='mr-2 h-4 w-4' />
-                    {action.text}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
-        },
-      })
+    const columns: ColumnDef<any>[] = []
+    for (const col of customColumns) {
+      if (typeof col === 'string') {
+        const prop = schemaProperties[col]
+        if (!prop) continue
+        columns.push({
+          accessorKey: col,
+          id: col,
+          header:
+            prop.description || col.charAt(0).toUpperCase() + col.slice(1),
+          cell: ({ row }) => {
+            const value = row.getValue(col)
+            if (value === null || value === undefined) return '-'
+            if (Array.isArray(value)) return value.join(', ')
+            if (col === 'lastOpenTime' && typeof value === 'number') {
+              return new Date(value).toLocaleString()
+            }
+            if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+            return String(value)
+          },
+        })
+      } else if (React.isValidElement(col)) {
+        const id = col.key ?? 'custom-' + columns.length
+        columns.push({
+          id: String(id),
+          header: 'Actions',
+          cell: ({ row }) => React.cloneElement(col, { row: row.original }),
+        })
+      }
     }
-
     return columns
   }, [schemaProperties, customColumns])
+
+  const hasContextMenu = customColumns.some(
+    (col) =>
+      (typeof col === 'object' && 'type' in col && col.type === 'action') ||
+      React.isValidElement(col)
+  )
 
   const tableColumns = generateColumns()
 
@@ -263,131 +225,69 @@ export function CommonTable({
 
   return (
     <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
-        <div className='flex flex-1 items-center space-x-2'>
-          <Input
-            placeholder='Filter...'
-            value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-            onChange={(event) =>
-              table.getColumn('name')?.setFilterValue(event.target.value)
-            }
-            className='h-8 w-[150px] lg:w-[250px]'
-          />
-          {columnFilters.length > 0 && (
-            <Button
-              variant='ghost'
-              onClick={() => table.resetColumnFilters()}
-              className='h-8 px-2 lg:px-3'
-            >
-              Reset
-              <Cross2Icon className='ml-2 h-4 w-4' />
-            </Button>
-          )}
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant='outline'
-              size='sm'
-              className='ml-auto hidden h-8 lg:flex'
-            >
-              <MixerHorizontalIcon className='mr-2 h-4 w-4' />
-              View
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end' className='w-[150px]'>
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {table
-              .getAllColumns()
-              .filter(
-                (column) =>
-                  typeof column.accessorFn !== 'undefined' &&
-                  column.getCanHide() &&
-                  column.id !== 'actions'
-              )
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className='capitalize'
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => {
-                      column.toggleVisibility(!!value)
-                    }}
-                    onSelect={(e) => {
-                      e.preventDefault()
-                    }}
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow>
+              <TableCell
+                colSpan={tableColumns.length}
+                className='h-24 text-center'
+              >
+                Loading...
+              </TableCell>
+            </TableRow>
+          ) : table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <ContextMenu key={row.id}>
+                <ContextMenuTrigger asChild>
+                  <TableRow
+                    data-state={row.getIsSelected() && 'selected'}
+                    className='cursor-context-menu'
                   >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className='rounded-md border'>
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
                         )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={tableColumns.length}
-                  className='h-24 text-center'
-                >
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <ContextMenu key={row.id}>
-                  <ContextMenuTrigger asChild>
-                    <TableRow
-                      data-state={row.getIsSelected() && 'selected'}
-                      className='cursor-context-menu'
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </ContextMenuTrigger>
-                  {customColumns?.find(
-                    (col): col is ActionColumn =>
-                      typeof col === 'object' &&
-                      'type' in col &&
-                      col.type === 'action'
-                  ) && (
-                    <ContextMenuContent className='w-[160px]'>
-                      {customColumns
-                        .find(
-                          (col): col is ActionColumn =>
-                            typeof col === 'object' &&
-                            'type' in col &&
-                            col.type === 'action'
-                        )
-                        ?.actions.map((action, index) => (
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </ContextMenuTrigger>
+
+                {hasContextMenu && (
+                  <ContextMenuContent className='w-[160px]'>
+                    {/* Classic action definitions */}
+                    {customColumns
+                      .filter(
+                        (
+                          col
+                        ): col is {
+                          type: 'action'
+                          actions: ActionColumnDef[]
+                        } =>
+                          typeof col === 'object' &&
+                          'type' in col &&
+                          col.type === 'action'
+                      )
+                      .flatMap((col) =>
+                        col.actions.map((action, index) => (
                           <ContextMenuItem
                             key={index}
                             onClick={() => action.onClick(row.original)}
@@ -395,94 +295,36 @@ export function CommonTable({
                             <action.Icon className='mr-2 h-4 w-4' />
                             {action.text}
                           </ContextMenuItem>
-                        ))}
-                    </ContextMenuContent>
-                  )}
-                </ContextMenu>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={tableColumns.length}
-                  className='h-24 text-center'
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                        ))
+                      )}
 
-      <div className='flex items-center justify-between px-2'>
-        <div className='text-muted-foreground flex-1 text-sm'>
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className='flex items-center space-x-6 lg:space-x-8'>
-          <div className='flex items-center space-x-2'>
-            <p className='text-sm font-medium'>Rows per page</p>
-            <Select
-              value={`${pageSize}`}
-              onValueChange={(value) => {
-                setPageSize(Number(value))
-              }}
-            >
-              <SelectTrigger className='h-8 w-[70px]'>
-                <SelectValue placeholder={pageSize} />
-              </SelectTrigger>
-              <SelectContent side='top'>
-                {[10, 20, 30, 40, 50].map((size) => (
-                  <SelectItem key={size} value={`${size}`}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className='flex w-[100px] items-center justify-center text-sm font-medium'>
-            Page {page} of {Math.ceil((data?.total ?? 0) / pageSize)}
-          </div>
-          <div className='flex items-center space-x-2'>
-            <Button
-              variant='outline'
-              className='hidden h-8 w-8 p-0 lg:flex'
-              onClick={() => setPage(1)}
-              disabled={page === 1}
-            >
-              <span className='sr-only'>Go to first page</span>
-              <ChevronLeftIcon className='h-4 w-4' />
-            </Button>
-            <Button
-              variant='outline'
-              className='h-8 w-8 p-0'
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              <span className='sr-only'>Go to previous page</span>
-              <ChevronLeftIcon className='h-4 w-4' />
-            </Button>
-            <Button
-              variant='outline'
-              className='h-8 w-8 p-0'
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= Math.ceil((data?.total ?? 0) / pageSize)}
-            >
-              <span className='sr-only'>Go to next page</span>
-              <ChevronRightIcon className='h-4 w-4' />
-            </Button>
-            <Button
-              variant='outline'
-              className='hidden h-8 w-8 p-0 lg:flex'
-              onClick={() => setPage(Math.ceil((data?.total ?? 0) / pageSize))}
-              disabled={page >= Math.ceil((data?.total ?? 0) / pageSize)}
-            >
-              <span className='sr-only'>Go to last page</span>
-              <ChevronRightIcon className='h-4 w-4' />
-            </Button>
-          </div>
-        </div>
-      </div>
+                    {/* JSX-based elements like <RowAction /> */}
+                    {customColumns
+                      .filter((col) => React.isValidElement(col))
+                      .map((element, i) => {
+                        const Comp = element as React.ReactElement<{ row: any }>
+                        return (
+                          <React.Fragment key={`jsx-${i}`}>
+                            {React.cloneElement(Comp, { row: row.original })}
+                          </React.Fragment>
+                        )
+                      })}
+                  </ContextMenuContent>
+                )}
+              </ContextMenu>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={tableColumns.length}
+                className='h-24 text-center'
+              >
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   )
 }

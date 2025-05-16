@@ -1,5 +1,5 @@
 import React from 'react'
-import { Plus, ExternalLink } from 'lucide-react'
+import { Plus, ExternalLink, Play, Trash } from 'lucide-react'
 import { isValidElementType } from 'react-is'
 import { Button } from '@/components/ui/button'
 import { CommonTable } from '@/components/ui/common-table/common-table'
@@ -24,6 +24,8 @@ export const globalComponentRegistry: Record<string, React.ElementType> = {
   PageLayout,
   CommonTable,
   Plus,
+  Trash,
+  Play,
   ExternalLink,
   span: 'span',
   div: 'div',
@@ -39,6 +41,10 @@ export function ComponentSchemas({
   function renderNode(node: any): React.ReactNode {
     if (typeof node === 'string') return node
 
+    if (node.type === 'Function') {
+      console.log('Function node:', node)
+    }
+
     const Comp =
       globalComponentRegistry[node.type] ||
       (node.type === 'Fragment' ? React.Fragment : node.type)
@@ -53,33 +59,57 @@ export function ComponentSchemas({
       Object.entries(node.props || {})
         .filter(([key]) => key !== 'children')
         .map(([key, value]) => {
-          // Function handlers
-          if (typeof value === 'string' && functions[value]) {
+          // 1️⃣ JSON-defined Function: { type: 'Function', args: [...] }
+          if (typeof value === 'object' && value?.type === 'Function') {
+            try {
+              const fn = new Function(...value.args)
+              return [key, fn]
+            } catch (err) {
+              console.warn(`Invalid Function args for '${key}'`, value, err)
+              return [key, undefined]
+            }
+          }
+
+          // 2️⃣ String reference to a global function
+          if (typeof value === 'string' && functions?.[value]) {
             return [key, functions[value]]
           }
 
-          // Icon handling
+          // 3️⃣ Icon/component registry lookup for known keys
           if (['icon', 'Icon', 'startIcon', 'endIcon'].includes(key)) {
-            if (typeof value === 'string' && globalComponentRegistry[value]) {
+            if (typeof value === 'string' && globalComponentRegistry?.[value]) {
               return [key, globalComponentRegistry[value]]
             }
             if (typeof value === 'object' && value?.type) {
-              const IconComp = globalComponentRegistry[value.type]
+              const IconComp = globalComponentRegistry?.[value.type]
               if (IconComp) {
                 return [
                   key,
-                  (props: any) => <IconComp {...value.props} {...props} />,
+                  (props: any) => (
+                    <IconComp {...(value.props || {})} {...props} />
+                  ),
                 ]
               }
             }
           }
 
-          // Nested component
+          // 4️⃣ Any component in props using the component registry
           if (typeof value === 'object' && value?.type) {
+            const CompFromRegistry = globalComponentRegistry?.[value.type]
+            if (CompFromRegistry) {
+              return [
+                key,
+                (props: any) => (
+                  <CompFromRegistry {...(value.props || {})} {...props} />
+                ),
+              ]
+            }
+
+            // 5️⃣ Fallback to recursive rendering of nested JSON component
             return [key, renderNode(value)]
           }
 
-          // Array of nested components
+          // 6️⃣ Array of nested components or primitive values
           if (Array.isArray(value)) {
             return [
               key,
@@ -89,6 +119,7 @@ export function ComponentSchemas({
             ]
           }
 
+          // 7️⃣ Default literal value
           return [key, value]
         })
     )

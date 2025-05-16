@@ -101,6 +101,7 @@ export function CommonTable({
   schemaUrl,
   schemaName,
 }: CommonTableProps) {
+  console.log('CommonTable columns', customColumns)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [schemaProperties, setSchemaProperties] = useState<{
@@ -164,19 +165,6 @@ export function CommonTable({
             return String(value)
           },
         })
-      } else if (React.isValidElement(col)) {
-        const id = col.key ?? 'custom-' + columns.length
-        columns.push({
-          id: String(id),
-          header: 'Actions',
-          cell: ({ row }) => {
-            const element = col as React.ReactElement<RowActionProps>
-            return React.cloneElement(element, {
-              row: row.original,
-              onOpen: element.props.onOpen,
-            })
-          },
-        })
       } else if (
         typeof col === 'object' &&
         'type' in col &&
@@ -195,15 +183,17 @@ export function CommonTable({
                 </Button>
               </ContextMenuTrigger>
               <ContextMenuContent className='w-[160px]'>
-                {actionCol.props.actions.map((action, index) => (
-                  <ContextMenuItem
-                    key={index}
-                    onClick={() => action.onClick(row.original)}
-                  >
-                    <action.Icon className='mr-2 h-4 w-4' />
-                    {action.text}
-                  </ContextMenuItem>
-                ))}
+                {actionCol.props.actions.map((action, index) => {
+                  return (
+                    <ContextMenuItem
+                      key={index}
+                      onClick={() => action.onClick(row.original)}
+                    >
+                      <action.Icon className='mr-2 h-4 w-4' />
+                      {action.text}
+                    </ContextMenuItem>
+                  )
+                })}
               </ContextMenuContent>
             </ContextMenu>
           ),
@@ -304,15 +294,18 @@ export function CommonTable({
                       )
                       .flatMap((col) =>
                         (col as ActionColumn).props.actions.map(
-                          (action, index) => (
-                            <ContextMenuItem
-                              key={index}
-                              onClick={() => action.onClick(row.original)}
-                            >
-                              <action.Icon className='mr-2 h-4 w-4' />
-                              {action.text}
-                            </ContextMenuItem>
-                          )
+                          (action, index) => {
+                            const handler = new Function(...action.onClick.args)
+                            return (
+                              <ContextMenuItem
+                                key={index}
+                                onClick={() => handler(row.original)}
+                              >
+                                <action.Icon className='mr-2 h-4 w-4' />
+                                {action.text}
+                              </ContextMenuItem>
+                            )
+                          }
                         )
                       )}
 

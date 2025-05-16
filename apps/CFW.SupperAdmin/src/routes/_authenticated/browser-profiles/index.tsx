@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Play, Trash } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ProfileInfo } from '@/api/model'
 import { axiosInstance } from '@/lib/axios'
@@ -85,13 +84,19 @@ function BrowserProfilesContent() {
               actions: [
                 {
                   text: 'Open',
-                  Icon: Play,
-                  onClick: (row: ProfileInfo) => handleOpenProfile(row),
+                  Icon: 'Play',
+                  onClick: {
+                    type: 'Function',
+                    args: ['row', 'console.log(row)'],
+                  },
                 },
                 {
                   text: 'Delete',
-                  Icon: Trash,
-                  onClick: (row: ProfileInfo) => handleDeleteProfile(row),
+                  Icon: 'Trash',
+                  onClick: {
+                    type: 'Function',
+                    args: ['row', 'console.log(row)'],
+                  },
                 },
               ],
             },

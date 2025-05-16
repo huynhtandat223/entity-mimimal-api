@@ -85,18 +85,9 @@ function BrowserProfilesContent() {
                 {
                   text: 'Open',
                   Icon: 'Play',
-                  onClick: {
-                    type: 'Function',
-                    args: ['row', 'console.log(row)'],
-                  },
-                },
-                {
-                  text: 'Delete',
-                  Icon: 'Trash',
-                  onClick: {
-                    type: 'Function',
-                    args: ['row', 'console.log(row)'],
-                  },
+                  onClick: [
+                    { operator: 'tap', args: ['row', 'console.log(row)'] },
+                  ],
                 },
               ],
             },

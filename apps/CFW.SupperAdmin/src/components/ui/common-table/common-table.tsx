@@ -16,6 +16,7 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import { LucideIcon, MoreHorizontal } from 'lucide-react'
+import { of, tap } from 'rxjs'
 import { axiosInstance } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
@@ -101,7 +102,6 @@ export function CommonTable({
   schemaUrl,
   schemaName,
 }: CommonTableProps) {
-  console.log('CommonTable columns', customColumns)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [schemaProperties, setSchemaProperties] = useState<{
@@ -295,12 +295,25 @@ export function CommonTable({
                       .flatMap((col) =>
                         (col as ActionColumn).props.actions.map(
                           (action, index) => {
-                            const handler = new Function(...action.onClick.args)
+                            let rxJsOpration = of(row)
+
+                            for (const operator of action.onClick) {
+                              if (operator.operator === 'tap') {
+                                const tapFunction = new Function(
+                                  ...operator.args
+                                )
+                                rxJsOpration = rxJsOpration.pipe(
+                                  tap(tapFunction)
+                                )
+                              }
+                            }
+
+                            const events = {
+                              onClick: () => rxJsOpration.subscribe(),
+                            }
+
                             return (
-                              <ContextMenuItem
-                                key={index}
-                                onClick={() => handler(row.original)}
-                              >
+                              <ContextMenuItem key={index} {...events}>
                                 <action.Icon className='mr-2 h-4 w-4' />
                                 {action.text}
                               </ContextMenuItem>

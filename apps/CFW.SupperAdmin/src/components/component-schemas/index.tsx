@@ -1,5 +1,5 @@
 import React from 'react'
-import { Plus, ExternalLink, Play, Trash } from 'lucide-react'
+import { ExternalLink, Play, Plus, Trash } from 'lucide-react'
 import { isValidElementType } from 'react-is'
 import { Button } from '@/components/ui/button'
 import { CommonTable } from '@/components/ui/common-table/common-table'
@@ -40,10 +40,6 @@ export function ComponentSchemas({
 }: ComponentSchemasProps) {
   function renderNode(node: any): React.ReactNode {
     if (typeof node === 'string') return node
-
-    if (node.type === 'Function') {
-      console.log('Function node:', node)
-    }
 
     const Comp =
       globalComponentRegistry[node.type] ||

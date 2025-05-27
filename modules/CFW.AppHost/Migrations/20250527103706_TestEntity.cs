@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace CFW.AppHost.Migrations
+namespace EFCoreDesign.Migrations
 {
     /// <inheritdoc />
-    public partial class slidebots : Migration
+    public partial class TestEntity : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,6 +37,60 @@ namespace CFW.AppHost.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContainerConfiguration",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    RoutePrefix = table.Column<string>(type: "TEXT", nullable: false),
+                    DefaultPageSize = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContainerConfiguration", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EndpointAuthorization",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Roles = table.Column<string>(type: "TEXT", nullable: true),
+                    Permissions = table.Column<string>(type: "TEXT", nullable: true),
+                    Policies = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EndpointAuthorization", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EndpointODataSupportOptions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxTop = table.Column<int>(type: "INTEGER", nullable: true),
+                    AllowFilter = table.Column<bool>(type: "INTEGER", nullable: false),
+                    AllowOrderBy = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EndpointODataSupportOptions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RuntimeEntityDefinition",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Namespace = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RuntimeEntityDefinition", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -134,6 +188,89 @@ namespace CFW.AppHost.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Endpoint",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Path = table.Column<string>(type: "TEXT", nullable: false),
+                    Method = table.Column<int>(type: "INTEGER", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    IsAuthenticationRequired = table.Column<bool>(type: "INTEGER", nullable: false),
+                    AuthorizationId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ODataOptionsId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    RuntimeEntityDefinitionId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ContainerConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Endpoint", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Endpoint_ContainerConfiguration_ContainerConfigurationId",
+                        column: x => x.ContainerConfigurationId,
+                        principalTable: "ContainerConfiguration",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Endpoint_EndpointAuthorization_AuthorizationId",
+                        column: x => x.AuthorizationId,
+                        principalTable: "EndpointAuthorization",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Endpoint_EndpointODataSupportOptions_ODataOptionsId",
+                        column: x => x.ODataOptionsId,
+                        principalTable: "EndpointODataSupportOptions",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Endpoint_RuntimeEntityDefinition_RuntimeEntityDefinitionId",
+                        column: x => x.RuntimeEntityDefinitionId,
+                        principalTable: "RuntimeEntityDefinition",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RuntimeEntityPropertyDefinition",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Type = table.Column<string>(type: "TEXT", nullable: false),
+                    IsKey = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsRequired = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsNullable = table.Column<bool>(type: "INTEGER", nullable: false),
+                    RuntimeEntityDefinitionId = table.Column<Guid>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RuntimeEntityPropertyDefinition", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RuntimeEntityPropertyDefinition_RuntimeEntityDefinition_RuntimeEntityDefinitionId",
+                        column: x => x.RuntimeEntityDefinitionId,
+                        principalTable: "RuntimeEntityDefinition",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RuntimeEntityRelationshipDefinition",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    TargetEntity = table.Column<string>(type: "TEXT", nullable: false),
+                    TargetProperty = table.Column<string>(type: "TEXT", nullable: false),
+                    Type = table.Column<int>(type: "INTEGER", nullable: false),
+                    RuntimeEntityDefinitionId = table.Column<Guid>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RuntimeEntityRelationshipDefinition", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RuntimeEntityRelationshipDefinition_RuntimeEntityDefinition_RuntimeEntityDefinitionId",
+                        column: x => x.RuntimeEntityDefinitionId,
+                        principalTable: "RuntimeEntityDefinition",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -323,9 +460,39 @@ namespace CFW.AppHost.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Endpoint_AuthorizationId",
+                table: "Endpoint",
+                column: "AuthorizationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Endpoint_ContainerConfigurationId",
+                table: "Endpoint",
+                column: "ContainerConfigurationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Endpoint_ODataOptionsId",
+                table: "Endpoint",
+                column: "ODataOptionsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Endpoint_RuntimeEntityDefinitionId",
+                table: "Endpoint",
+                column: "RuntimeEntityDefinitionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Policies_TenantId",
                 table: "Policies",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RuntimeEntityPropertyDefinition_RuntimeEntityDefinitionId",
+                table: "RuntimeEntityPropertyDefinition",
+                column: "RuntimeEntityDefinitionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RuntimeEntityRelationshipDefinition_RuntimeEntityDefinitionId",
+                table: "RuntimeEntityRelationshipDefinition",
+                column: "RuntimeEntityDefinitionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TenantUsers_RoleId",
@@ -362,6 +529,15 @@ namespace CFW.AppHost.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "Endpoint");
+
+            migrationBuilder.DropTable(
+                name: "RuntimeEntityPropertyDefinition");
+
+            migrationBuilder.DropTable(
+                name: "RuntimeEntityRelationshipDefinition");
+
+            migrationBuilder.DropTable(
                 name: "Slide");
 
             migrationBuilder.DropTable(
@@ -369,6 +545,18 @@ namespace CFW.AppHost.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserPolicies");
+
+            migrationBuilder.DropTable(
+                name: "ContainerConfiguration");
+
+            migrationBuilder.DropTable(
+                name: "EndpointAuthorization");
+
+            migrationBuilder.DropTable(
+                name: "EndpointODataSupportOptions");
+
+            migrationBuilder.DropTable(
+                name: "RuntimeEntityDefinition");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

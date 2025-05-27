@@ -8,17 +8,202 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace CFW.AppHost.Migrations
+namespace EFCoreDesign.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250514042155_slidebots")]
-    partial class slidebots
+    [Migration("20250527103706_TestEntity")]
+    partial class TestEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.ContainerConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("DefaultPageSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RoutePrefix")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ContainerConfiguration");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.Endpoint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AuthorizationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ContainerConfigurationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsAuthenticationRequired")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ODataOptionsId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RuntimeEntityDefinitionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorizationId");
+
+                    b.HasIndex("ContainerConfigurationId");
+
+                    b.HasIndex("ODataOptionsId");
+
+                    b.HasIndex("RuntimeEntityDefinitionId");
+
+                    b.ToTable("Endpoint");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.EndpointAuthorization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Permissions")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Policies")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Roles")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EndpointAuthorization");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.EndpointODataSupportOptions", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("AllowFilter")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowOrderBy")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MaxTop")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EndpointODataSupportOptions");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Namespace")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntimeEntityDefinition");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityPropertyDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsKey")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsNullable")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RuntimeEntityDefinitionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RuntimeEntityDefinitionId");
+
+                    b.ToTable("RuntimeEntityPropertyDefinition");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityRelationshipDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RuntimeEntityDefinitionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TargetEntity")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TargetProperty")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RuntimeEntityDefinitionId");
+
+                    b.ToTable("RuntimeEntityRelationshipDefinition");
+                });
 
             modelBuilder.Entity("CFW.AppHost.Features.Identity.Models.ApplicationPolicy", b =>
                 {
@@ -362,6 +547,49 @@ namespace CFW.AppHost.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.Endpoint", b =>
+                {
+                    b.HasOne("CFW.AppHost.Features.Endpoints.Models.EndpointAuthorization", "Authorization")
+                        .WithMany()
+                        .HasForeignKey("AuthorizationId");
+
+                    b.HasOne("CFW.AppHost.Features.Endpoints.Models.ContainerConfiguration", "ContainerConfiguration")
+                        .WithMany("Endpoints")
+                        .HasForeignKey("ContainerConfigurationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CFW.AppHost.Features.Endpoints.Models.EndpointODataSupportOptions", "ODataOptions")
+                        .WithMany()
+                        .HasForeignKey("ODataOptionsId");
+
+                    b.HasOne("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityDefinition", "RuntimeEntityDefinition")
+                        .WithMany()
+                        .HasForeignKey("RuntimeEntityDefinitionId");
+
+                    b.Navigation("Authorization");
+
+                    b.Navigation("ContainerConfiguration");
+
+                    b.Navigation("ODataOptions");
+
+                    b.Navigation("RuntimeEntityDefinition");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityPropertyDefinition", b =>
+                {
+                    b.HasOne("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityDefinition", null)
+                        .WithMany("Properties")
+                        .HasForeignKey("RuntimeEntityDefinitionId");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityRelationshipDefinition", b =>
+                {
+                    b.HasOne("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityDefinition", null)
+                        .WithMany("Relationships")
+                        .HasForeignKey("RuntimeEntityDefinitionId");
+                });
+
             modelBuilder.Entity("CFW.AppHost.Features.Identity.Models.ApplicationPolicy", b =>
                 {
                     b.HasOne("CFW.AppHost.Features.Identity.Models.Tenant", "Tenant")
@@ -478,6 +706,18 @@ namespace CFW.AppHost.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.ContainerConfiguration", b =>
+                {
+                    b.Navigation("Endpoints");
+                });
+
+            modelBuilder.Entity("CFW.AppHost.Features.Endpoints.Models.RuntimeEntityDefinition", b =>
+                {
+                    b.Navigation("Properties");
+
+                    b.Navigation("Relationships");
                 });
 
             modelBuilder.Entity("CFW.AppHost.Features.Identity.Models.ApplicationUser", b =>

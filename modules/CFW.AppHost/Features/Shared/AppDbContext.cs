@@ -7,7 +7,7 @@ namespace CFW.AppHost.Features.Shared;
 
 public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options, IEnumerable<Type> runtimeTypes) : base(options)
     {
     }
 

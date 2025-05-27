@@ -23,6 +23,41 @@ public class ModuleInitializer : IModuleInitializer
         _runtimeAsmConfig = options.Value;
     }
 
+    public async Task InitModule(IHostApplicationBuilder builder)
+    {
+        var entityDefs = await _db.Set<Models.Endpoint>()
+            .Select(x => x.RuntimeEntityDefinition)
+            .ToListAsync();
+
+        var runtimeDir = _runtimeAsmConfig.GetRuntimeEntitiesDirOrDefault();
+        var runtimeTypes = new List<Type>();
+
+        foreach (var file in Directory.GetFiles(runtimeDir, "*.dll"))
+        {
+            try
+            {
+                // Load without locking the file
+                var assemblyBytes = File.ReadAllBytes(file);
+                var assembly = Assembly.Load(assemblyBytes);
+
+                foreach (var type in assembly.GetTypes())
+                {
+                    // Optional: only add entity-related types
+                    if (entityDefs.Any(e => type.FullName == $"{e.Namespace}.{e.Name}"))
+                        runtimeTypes.Add(type);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log and continue
+                Console.WriteLine($"Failed to load assembly {file}: {ex.Message}");
+            }
+        }
+
+        builder.Services.AddTransient(runtimeTypes);
+    }
+
+
 
     public async Task RunModule(IHost app)
     {
@@ -95,6 +130,7 @@ public class ModuleInitializer : IModuleInitializer
         var serviceProvider = httpContext.RequestServices;
         var interceptor = serviceProvider.GetRequiredService<ODataFeatureInterceptor<T>>();
         var db = serviceProvider.GetRequiredService<AppDbContext>();
+
         var queryable = db.Set<T>().AsNoTracking();
 
         var result = await interceptor.OnExecutedAsync(httpContext, new DynamicApiOperation

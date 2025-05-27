@@ -39,9 +39,6 @@ if (!isTesting)
         });
 }
 
-IEnumerable<Type> types = new List<Type>();
-builder.Services.AddSingleton(types);
-
 //Authentication
 //builder.Services.AddAuthorization();
 //builder.Services.AddIdentityApiEndpoints<ApplicationUser>()

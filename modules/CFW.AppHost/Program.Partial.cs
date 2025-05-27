@@ -1,0 +1,3 @@
+﻿public partial class Program
+{
+}

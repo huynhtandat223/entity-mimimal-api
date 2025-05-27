@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CFW.Core.Utils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OpenApi;
@@ -38,7 +39,7 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
 
         operation.Parameters ??= new List<OpenApiParameter>();
 
-        if (apiOperation.Route.Contains("{id}"))
+        if (apiOperation.Route.IsNotNullOrNotWhiteSpace() && apiOperation.Route.Contains("{id}"))
         {
             operation.Parameters.Add(new OpenApiParameter
             {

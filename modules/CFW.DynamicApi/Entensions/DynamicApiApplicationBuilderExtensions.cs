@@ -10,7 +10,7 @@ using Scalar.AspNetCore;
 using System.Reflection;
 using System.Text;
 
-namespace CFW.DynamicApi;
+namespace CFW.DynamicApi.Entensions;
 
 public static class DynamicApiApplicationBuilderExtensions
 {

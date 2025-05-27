@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.EntityMinimalApi.Testings", "CFW.EntityMinimalApi.Testings.csproj", "{DA184C76-6368-CA0B-8EB8-D4796ABCAD45}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA184C76-6368-CA0B-8EB8-D4796ABCAD45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA184C76-6368-CA0B-8EB8-D4796ABCAD45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA184C76-6368-CA0B-8EB8-D4796ABCAD45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA184C76-6368-CA0B-8EB8-D4796ABCAD45}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E6328E21-FB28-4194-95B9-1EBBAF935BF9}
+	EndGlobalSection
+EndGlobal

@@ -3,12 +3,14 @@ global using CFW.Core.Utils;
 using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
 using CFW.AppHost.Infrastructures.IXBrowserGateway;
-using CFW.DynamicApi;
+using CFW.Core.Dependencies;
+using CFW.DynamicApi.Entensions;
 using Microsoft.EntityFrameworkCore;
 using Refit;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+var isTesting = builder.Environment.IsEnvironment("Testing");
 
 // Add Cors policy
 builder.Services.AddCors(options =>
@@ -23,14 +25,21 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+
+// In case interation test: let test project setup services
+if (!isTesting)
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Filename=database.db"));
 
-builder.Services
-    .AddDynamicApi("/api/v1/", container =>
-    {
-        container.DefaultPageSize = 50;
-    });
+    builder.Services
+        .AddDynamicApi("/api/v1/", container =>
+        {
+            container.DefaultPageSize = 50;
+        });
+}
+
+
 
 //Authentication
 //builder.Services.AddAuthorization();
@@ -52,10 +61,12 @@ builder.Services
     .AddRefitClient<IProfileGateway>(refitSettings)
     .ConfigureHttpClient(c => c.BaseAddress = new Uri("http://127.0.0.1:53200/api/v2"));
 
+await builder.TryAddAllServicesAndInitModules();
+
 var app = builder.Build();
 
 //Use CORS policy
-app.UseCors("AllowFrontend"); // 👈 apply named policy globally
+app.UseCors("AllowFrontend");
 
 //app.UseAuthorization();
 //app.MapIdentityApi<ApplicationUser>();
@@ -66,6 +77,8 @@ await app.UseDynamicApi();
 using var scope = app.Services.CreateScope();
 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 await db.SeedSuperAdminAsync();
+
+await app.RunModules();
 
 app.Run();
 

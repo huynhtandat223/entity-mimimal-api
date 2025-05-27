@@ -134,7 +134,7 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
     public override void MapApi(RouteGroupBuilder group)
     {
         var operation = this;
-        var route = group.MapMethods(operation.Route, [operation.HttpMethod]
+        var route = group.MapMethods(operation.Route ?? "/", [operation.HttpMethod]
             , async (HttpContext ctx, QueryRequest<TRequest> request) =>
         {
             if (request is null)

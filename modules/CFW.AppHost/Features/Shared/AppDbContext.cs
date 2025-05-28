@@ -2,18 +2,13 @@
 using CFW.Core.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Data.Entity.Infrastructure;
 
 namespace CFW.AppHost.Features.Shared;
 
 public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
-    , IDbModelCacheKeyProvider
 {
-    private readonly IEnumerable<Type> _runtimeTypes;
-
-    public AppDbContext(DbContextOptions<AppDbContext> options, IEnumerable<Type> runtimeTypes) : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-        _runtimeTypes = runtimeTypes;
     }
 
     public DbSet<Tenant> Tenants { get; set; }
@@ -24,16 +19,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
 
     public DbSet<UserPolicy> UserPolicies { get; set; }
 
-    public string CacheKey => _runtimeTypes.Count().ToString();
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
-        foreach (var runtimeType in _runtimeTypes)
-        {
-            builder.Entity(runtimeType);
-        }
 
         //scan current domain for entities that use marker interface
         var markerType = typeof(IEntity<>);

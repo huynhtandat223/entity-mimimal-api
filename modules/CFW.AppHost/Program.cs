@@ -1,16 +1,26 @@
 ﻿global using CFW.Core.Results;
 global using CFW.Core.Utils;
+using CFW.AppHost.Features.Endpoints.Infrastructures;
 using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
 using CFW.AppHost.Infrastructures.IXBrowserGateway;
 using CFW.Core.Dependencies;
 using CFW.DynamicApi.Entensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Refit;
+using Serilog;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 var isTesting = builder.Environment.IsEnvironment("Testing");
+
+//logging
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateLogger();
+builder.Host.UseSerilog();
 
 // Add Cors policy
 builder.Services.AddCors(options =>
@@ -30,7 +40,14 @@ builder.Services.AddCors(options =>
 if (!isTesting)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Filename=database.db"));
+    options
+    //.ReplaceService<IModelCacheKeyFactory, MyModelCacheKeyFactory>()
+    .UseSqlite("Filename=database.db"));
+
+    builder.Services.AddDbContext<RuntimeDbContext>(options =>
+   options
+   .ReplaceService<IModelCacheKeyFactory, MyModelCacheKeyFactory>()
+   .UseSqlite("Filename=database.db"));
 
     builder.Services
         .AddDynamicApi("/api/v1/", container =>
@@ -81,3 +98,10 @@ await app.RunModules();
 app.Run();
 
 
+internal sealed class MyModelCacheKeyFactory : IModelCacheKeyFactory
+{
+    public object Create(DbContext context, bool designTime)
+    {
+        return Guid.NewGuid();
+    }
+}

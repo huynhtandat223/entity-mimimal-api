@@ -17,6 +17,7 @@ public static class ServicesCollectionExtensions
             .Where(t => t.IsClass && !t.IsAbstract)
             .ToList();
 
+        //Add scoped services
         var scopeServices = cacheTypes
             .Where(t => typeof(IScopedService).IsAssignableFrom(t))
             .ToList();
@@ -26,6 +27,22 @@ public static class ServicesCollectionExtensions
         foreach (var service in scopeServices)
             services.TryAddScoped(service);
 
+        //Add singleton services
+        var singletonServices = cacheTypes
+            .Where(t => typeof(ISingletonService).IsAssignableFrom(t))
+            .ToList();
+        foreach (var service in singletonServices)
+            services.TryAddSingleton(service);
+
+        //Add transient services
+        var transientServices = cacheTypes
+            .Where(t => typeof(ITransientService).IsAssignableFrom(t))
+            .ToList();
+        foreach (var service in transientServices)
+            services.TryAddTransient(service);
+
+
+        // add configurable sections
         var configTypes = cacheTypes.Where(x => x.GetCustomAttribute<SectionConfigAttribute>() is not null).ToList();
         foreach (var configType in configTypes)
         {
@@ -33,6 +50,8 @@ public static class ServicesCollectionExtensions
             attr.Configure(services, configuration);
         }
 
+
+        // create a list of module types that implement IModuleInitializer
         var moduleTypes = cacheTypes
             .Where(t => typeof(IModuleInitializer).IsAssignableFrom(t))
             .ToList();

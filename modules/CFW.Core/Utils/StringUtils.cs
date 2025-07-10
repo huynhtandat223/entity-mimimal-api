@@ -106,4 +106,22 @@ public static class StringUtils
 
         return Convert.ChangeType(str, type);
     }
+
+    public static bool IsNullOrEmpty(this string? str)
+            => string.IsNullOrEmpty(str);
+
+    public static bool IsNotNullOrEmpty(this string? str)
+        => !string.IsNullOrEmpty(str);
+
+    public static bool IsNotNullOrEmpty(this Guid? guid)
+       => guid.GetValueOrDefault() != Guid.Empty;
+
+    public static bool IsNullOrEmpty(this Guid guid)
+       => guid == Guid.Empty;
+
+    public static bool IsNotNullOrEmpty(this Guid guid)
+       => guid != Guid.Empty;
+
+    public static bool IsNullOrEmpty(this Guid? guid)
+       => guid.GetValueOrDefault() == Guid.Empty;
 }

@@ -5,6 +5,9 @@ public static class ResultsExtensions
     public static IResult Success(this object _)
         => new Result { IsSuccess = true, HttpStatusCode = System.Net.HttpStatusCode.OK };
 
+    public static IResult Notfound(this object _, string? message = null)
+        => new Result { IsSuccess = false, Message = message, HttpStatusCode = System.Net.HttpStatusCode.NotFound };
+
     public static IResult<T> Success<T>(this T? data)
         => new Result<T> { IsSuccess = true, Data = data, HttpStatusCode = System.Net.HttpStatusCode.OK };
 

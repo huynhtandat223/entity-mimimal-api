@@ -50,6 +50,16 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
+      title: 'Development',
+      items: [
+        {
+          title: 'Databases',
+          url: '/databases',
+          icon: IconDatabase,
+        },
+      ],
+    },
+    {
       title: 'Account management',
       items: [
         {

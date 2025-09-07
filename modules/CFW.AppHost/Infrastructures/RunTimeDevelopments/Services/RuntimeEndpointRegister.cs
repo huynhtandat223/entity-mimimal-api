@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace CFW.AppHost.Features.Endpoints.Infrastructures;
+namespace CFW.AppHost.Infrastructures.RunTimeDevelopments.Services;
 
 public class RuntimeEndpointRegister : ITransientService
 {

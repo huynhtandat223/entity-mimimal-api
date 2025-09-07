@@ -134,7 +134,8 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
     public override void MapApi(RouteGroupBuilder group)
     {
         var operation = this;
-        var route = group.MapMethods(operation.Route ?? "/", [operation.HttpMethod]
+
+        group.MapMethods(operation.Route ?? "/", [operation.HttpMethod]
             , async (HttpContext ctx, QueryRequest<TRequest> request) =>
         {
             if (request is null)
@@ -173,6 +174,7 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
             return interceptedResult;
 
         }).Produces<TResponse>(StatusCodes.Status200OK)
+        .Accepts<TRequest>("application/json")
         .Produces(StatusCodes.Status400BadRequest)
         .WithMetadata(operation);
     }

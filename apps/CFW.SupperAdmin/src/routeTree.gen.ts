@@ -29,6 +29,7 @@ import { Route as AuthenticatedTenantsIndexImport } from './routes/_authenticate
 import { Route as AuthenticatedTasksIndexImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedHelpCenterIndexImport } from './routes/_authenticated/help-center/index'
+import { Route as AuthenticatedDatabasesIndexImport } from './routes/_authenticated/databases/index'
 import { Route as AuthenticatedChatsIndexImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedBrowserProfilesIndexImport } from './routes/_authenticated/browser-profiles/index'
 import { Route as AuthenticatedAppsIndexImport } from './routes/_authenticated/apps/index'
@@ -149,6 +150,13 @@ const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexImport.update({
     id: '/help-center/',
     path: '/help-center/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+
+const AuthenticatedDatabasesIndexRoute =
+  AuthenticatedDatabasesIndexImport.update({
+    id: '/databases/',
+    path: '/databases/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -357,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatsIndexImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/databases/': {
+      id: '/_authenticated/databases/'
+      path: '/databases'
+      fullPath: '/databases'
+      preLoaderRoute: typeof AuthenticatedDatabasesIndexImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
@@ -427,6 +442,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedBrowserProfilesIndexRoute: typeof AuthenticatedBrowserProfilesIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedDatabasesIndexRoute: typeof AuthenticatedDatabasesIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedTenantsIndexRoute: typeof AuthenticatedTenantsIndexRoute
@@ -441,6 +457,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBrowserProfilesIndexRoute:
     AuthenticatedBrowserProfilesIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedDatabasesIndexRoute: AuthenticatedDatabasesIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedTenantsIndexRoute: AuthenticatedTenantsIndexRoute,
@@ -472,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/browser-profiles': typeof AuthenticatedBrowserProfilesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/databases': typeof AuthenticatedDatabasesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
@@ -499,6 +517,7 @@ export interface FileRoutesByTo {
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/browser-profiles': typeof AuthenticatedBrowserProfilesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/databases': typeof AuthenticatedDatabasesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
@@ -529,6 +548,7 @@ export interface FileRoutesById {
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/browser-profiles/': typeof AuthenticatedBrowserProfilesIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/databases/': typeof AuthenticatedDatabasesIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -560,6 +580,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser-profiles'
     | '/chats'
+    | '/databases'
     | '/help-center'
     | '/settings/'
     | '/tasks'
@@ -586,6 +607,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser-profiles'
     | '/chats'
+    | '/databases'
     | '/help-center'
     | '/settings'
     | '/tasks'
@@ -614,6 +636,7 @@ export interface FileRouteTypes {
     | '/_authenticated/apps/'
     | '/_authenticated/browser-profiles/'
     | '/_authenticated/chats/'
+    | '/_authenticated/databases/'
     | '/_authenticated/help-center/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
@@ -682,6 +705,7 @@ export const routeTree = rootRoute
         "/_authenticated/apps/",
         "/_authenticated/browser-profiles/",
         "/_authenticated/chats/",
+        "/_authenticated/databases/",
         "/_authenticated/help-center/",
         "/_authenticated/tasks/",
         "/_authenticated/tenants/",
@@ -763,6 +787,10 @@ export const routeTree = rootRoute
     },
     "/_authenticated/chats/": {
       "filePath": "_authenticated/chats/index.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/databases/": {
+      "filePath": "_authenticated/databases/index.tsx",
       "parent": "/_authenticated"
     },
     "/_authenticated/help-center/": {

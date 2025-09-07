@@ -1,4 +1,4 @@
-﻿using CFW.AppHost.Features.Endpoints;
+﻿using CFW.AppHost.Features.Endpoints.Endpoints;
 using CFW.AppHost.Features.Shared;
 using CFW.CoreTestings.Logging;
 using CFW.DynamicApi.Entensions;

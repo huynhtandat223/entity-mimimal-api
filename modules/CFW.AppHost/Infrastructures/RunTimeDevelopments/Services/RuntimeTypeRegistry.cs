@@ -1,12 +1,12 @@
 ﻿using CFW.AppHost.Features.Endpoints.Configurations;
-using CFW.AppHost.Features.Endpoints.Models;
+using CFW.AppHost.Infrastructures.RunTimeDevelopments.Models;
 using CFW.Core.Builders.RuntimeTypeBuilders;
 using CFW.Core.Dependencies;
 using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace CFW.AppHost.Features.Endpoints.Infrastructures;
+namespace CFW.AppHost.Infrastructures.RunTimeDevelopments.Services;
 
 public class RuntimeTypeRegistry : ISingletonService
 {
@@ -24,7 +24,7 @@ public class RuntimeTypeRegistry : ISingletonService
 
     public IReadOnlyCollection<Type> RuntimeTypes => _runtimeTypes.AsReadOnly();
 
-    public async Task<IEnumerable<Type>> LoadRuntimeTypes(IEnumerable<Models.RuntimeEntityDefinition> runtimeEntityDefinitions)
+    public async Task<IEnumerable<Type>> LoadRuntimeTypes(IEnumerable<RuntimeEntityDefinition> runtimeEntityDefinitions)
     {
         if (!runtimeEntityDefinitions.Any())
             return _runtimeTypes;

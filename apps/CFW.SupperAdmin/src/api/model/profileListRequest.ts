@@ -5,10 +5,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * @nullable
- */
-export type ProfileListRequest = {
+export interface ProfileListRequest {
   /** @nullable */
   profileId?: number | null;
   /** @nullable */
@@ -19,4 +16,4 @@ export type ProfileListRequest = {
   tagId?: number | null;
   page?: number;
   limit?: number;
-} | null;
+}

@@ -6,17 +6,16 @@
  */
 import type { ProxyConfig } from './proxyConfig';
 
-/**
- * @nullable
- */
-export type CreateProfileRequest = {
-  site_id?: number;
-  site_url?: string;
-  color?: string;
+export interface CreateProfileRequest {
+  /** @nullable */
+  siteId?: number | null;
+  siteUrl?: string;
+  /** @nullable */
+  color?: string | null;
   name?: string;
   /** @nullable */
   note?: string | null;
-  group_id?: number;
+  groupId?: number;
   /** @nullable */
   tag?: string | null;
   /** @nullable */
@@ -24,8 +23,8 @@ export type CreateProfileRequest = {
   /** @nullable */
   password?: string | null;
   /** @nullable */
-  tfa_secret?: string | null;
+  tfaSecret?: string | null;
   /** @nullable */
   cookie?: string | null;
-  proxy_config?: ProxyConfig;
-} | null;
+  proxyConfig?: ProxyConfig;
+}

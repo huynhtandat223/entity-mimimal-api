@@ -11,7 +11,7 @@ public class ApiOperationAttribute : Attribute
 {
     public string? RouteName { get; set; }
 
-    public OperationHttpMethod HttpMethod { get; } = OperationHttpMethod.POST;
+    public OperationHttpMethod HttpMethod { get; set; } = OperationHttpMethod.POST;
 
     internal Type? TargetType { get; set; }
 

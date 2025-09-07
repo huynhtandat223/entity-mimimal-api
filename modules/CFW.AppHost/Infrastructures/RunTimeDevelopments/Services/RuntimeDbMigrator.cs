@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Migrations.Design;
 using Microsoft.EntityFrameworkCore.Sqlite.Design.Internal;
 
-namespace CFW.AppHost.Features.Endpoints.Infrastructures;
+namespace CFW.AppHost.Infrastructures.RunTimeDevelopments.Services;
 
 public class RuntimeDbMigrator : IScopedService
 {

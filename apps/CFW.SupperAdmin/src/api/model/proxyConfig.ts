@@ -10,25 +10,25 @@ import type { ProxyConfigProxyDataJsonFormat } from './proxyConfigProxyDataJsonF
  * @nullable
  */
 export type ProxyConfig = {
-  proxy_mode?: number;
-  proxy_check_line?: string;
+  proxyMode?: number;
+  proxyCheckLine?: string;
   /** @nullable */
-  proxy_id?: string | null;
-  proxy_type?: string;
+  proxyId?: string | null;
+  proxyType?: string;
   /** @nullable */
-  proxy_ip?: string | null;
+  proxyIp?: string | null;
   /** @nullable */
-  proxy_port?: string | null;
+  proxyPort?: string | null;
   /** @nullable */
-  proxy_user?: string | null;
+  proxyUser?: string | null;
   /** @nullable */
-  proxy_password?: string | null;
-  ip_detection?: string;
-  traffic_package_ip_policy?: boolean;
-  proxy_service?: string;
-  proxy_data_format_type?: string;
-  proxy_data_txt_format?: string;
-  proxy_data_json_format?: ProxyConfigProxyDataJsonFormat;
+  proxyPassword?: string | null;
+  ipDetection?: string;
+  trafficPackageIpPolicy?: boolean;
+  proxyService?: string;
+  proxyDataFormatType?: string;
+  proxyDataTxtFormat?: string;
+  proxyDataJsonFormat?: ProxyConfigProxyDataJsonFormat;
   proxy_extraction_method?: string;
   /** @nullable */
   proxy_url?: string | null;

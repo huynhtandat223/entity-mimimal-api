@@ -1,9 +1,9 @@
 ﻿global using CFW.Core.Results;
 global using CFW.Core.Utils;
-using CFW.AppHost.Features.Endpoints.Infrastructures;
 using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
 using CFW.AppHost.Infrastructures.IXBrowserGateway;
+using CFW.AppHost.Infrastructures.RunTimeDevelopments;
 using CFW.Core.Dependencies;
 using CFW.DynamicApi.Entensions;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +37,7 @@ builder.Services.AddCors(options =>
 
 
 // In case interation test: let test project setup services
-if (!isTesting)
+if (!isTesting || true)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
     options

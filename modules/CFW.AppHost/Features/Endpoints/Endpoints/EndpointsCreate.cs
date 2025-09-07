@@ -1,10 +1,10 @@
-﻿using CFW.AppHost.Features.Endpoints.Infrastructures;
-using CFW.AppHost.Features.Shared;
+﻿using CFW.AppHost.Features.Shared;
+using CFW.AppHost.Infrastructures.RunTimeDevelopments.Services;
 using CFW.DynamicApi;
 using CFW.DynamicApi.Entensions;
 using Endpoint = CFW.AppHost.Features.Endpoints.Models.Endpoint;
 
-namespace CFW.AppHost.Features.Endpoints;
+namespace CFW.AppHost.Features.Endpoints.Endpoints;
 
 [ApiOperation("endpoints")]
 public class EndpointsCreate : IRequestHandler<Endpoint, Endpoint>
@@ -22,9 +22,7 @@ public class EndpointsCreate : IRequestHandler<Endpoint, Endpoint>
     {
         var endpoint = request.Model;
         if (endpoint.RuntimeEntityDefinition is null)
-        {
             throw new NotImplementedException("RuntimeEntityDefinition is not implemented yet.");
-        }
 
         var loadedType = _runtimeTypeRegistry.CreateTypeAddLoad(endpoint.RuntimeEntityDefinition);
 

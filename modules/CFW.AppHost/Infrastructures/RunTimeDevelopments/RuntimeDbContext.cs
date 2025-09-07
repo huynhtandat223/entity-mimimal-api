@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CFW.AppHost.Infrastructures.RunTimeDevelopments.Services;
+using Microsoft.EntityFrameworkCore;
 
-namespace CFW.AppHost.Features.Endpoints.Infrastructures;
+namespace CFW.AppHost.Infrastructures.RunTimeDevelopments;
 
 public class RuntimeDbContext : DbContext
 {

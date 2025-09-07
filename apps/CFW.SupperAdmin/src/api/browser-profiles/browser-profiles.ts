@@ -17,6 +17,8 @@ import type {
 import type {
   CreateProfileRequest,
   CreateProfileResponse,
+  OpenProfileRequest,
+  OpenProfileResponse,
   ProfileListData,
   ProfileListRequest
 } from '.././model';
@@ -139,6 +141,64 @@ const {mutation: mutationOptions} = options ?
       > => {
 
       const mutationOptions = getPostApiV1BrowserProfilesListMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    export const postApiV1BrowserProfilesOpen = (
+    openProfileRequest: OpenProfileRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customAxiosFunction<OpenProfileResponse>(
+      {url: `/api/v1/browser-profiles/open`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: openProfileRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getPostApiV1BrowserProfilesOpenMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1BrowserProfilesOpen>>, TError,{data: OpenProfileRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postApiV1BrowserProfilesOpen>>, TError,{data: OpenProfileRequest}, TContext> => {
+
+const mutationKey = ['postApiV1BrowserProfilesOpen'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiV1BrowserProfilesOpen>>, {data: OpenProfileRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postApiV1BrowserProfilesOpen(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiV1BrowserProfilesOpenMutationResult = NonNullable<Awaited<ReturnType<typeof postApiV1BrowserProfilesOpen>>>
+    export type PostApiV1BrowserProfilesOpenMutationBody = OpenProfileRequest
+    export type PostApiV1BrowserProfilesOpenMutationError = void
+
+    export const usePostApiV1BrowserProfilesOpen = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiV1BrowserProfilesOpen>>, TError,{data: OpenProfileRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiV1BrowserProfilesOpen>>,
+        TError,
+        {data: OpenProfileRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getPostApiV1BrowserProfilesOpenMutationOptions(options);
 
       return useMutation(mutationOptions , queryClient);
     }

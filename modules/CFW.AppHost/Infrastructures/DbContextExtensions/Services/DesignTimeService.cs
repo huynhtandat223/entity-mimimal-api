@@ -1,20 +1,16 @@
-﻿using CFW.AppHost.Features.Databases.Models;
+﻿using CFW.AppHost.Infrastructures.DbContextExtensions.Models;
 using CFW.Core.Dependencies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.SqlServer.Design.Internal;
 
-namespace CFW.AppHost.Features.Databases.Services;
+namespace CFW.AppHost.Infrastructures.DbContextExtensions.Services;
 
 /// <summary>
 /// https://learn.microsoft.com/en-us/ef/core/cli/services
 /// </summary>
 public class DesignTimeService : ISingletonService
 {
-    public DesignTimeService()
-    {
-    }
-
     public IServiceProvider CreateDesignTimeServiceProvider(string connectionString, DatabaseProvider databaseProvider)
     {
         var services = new ServiceCollection();

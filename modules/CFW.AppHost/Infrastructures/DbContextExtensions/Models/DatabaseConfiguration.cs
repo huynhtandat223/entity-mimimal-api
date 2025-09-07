@@ -1,8 +1,7 @@
-﻿using CFW.AppHost.Features.Databases.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace CFW.AppHost.Features.Databases.ViewModels;
+namespace CFW.AppHost.Infrastructures.DbContextExtensions.Models;
 
 public class DatabaseConfiguration
 {

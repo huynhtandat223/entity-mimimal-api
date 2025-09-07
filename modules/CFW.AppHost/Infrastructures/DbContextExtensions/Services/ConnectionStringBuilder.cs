@@ -1,14 +1,14 @@
-﻿using CFW.AppHost.Features.Databases.Models;
-using CFW.AppHost.Features.Databases.ViewModels;
+﻿using CFW.AppHost.Infrastructures.DbContextExtensions.Models;
 using CFW.Core.Dependencies;
 using Microsoft.Data.SqlClient;
 
-namespace CFW.AppHost.Features.Databases.Services;
+namespace CFW.AppHost.Infrastructures.DbContextExtensions.Services;
 
 public class ConnectionStringBuilder : ISingletonService
 {
-    public string BuildConnectionString(DatabaseProvider provider, DatabaseConfiguration config)
+    public string BuildConnectionString(DatabaseConfiguration config)
     {
+        var provider = config.DatabaseProvider;
         return provider switch
         {
             DatabaseProvider.MSSQL => BuildMSSQLConnectionString(config.MSSQL!),
@@ -144,26 +144,26 @@ public class ConnectionStringBuilder : ISingletonService
         return string.Join(";", parts);
     }
 
-    public async Task<bool> TestConnectionAsync(DatabaseProvider provider, DatabaseConfiguration config)
-    {
-        try
-        {
-            var connectionString = BuildConnectionString(provider, config);
+    //public async Task<bool> TestConnectionAsync(DatabaseProvider provider, DatabaseConfiguration config)
+    //{
+    //    try
+    //    {
+    //        var connectionString = BuildConnectionString(provider, config);
 
-            return provider switch
-            {
-                DatabaseProvider.MSSQL => await TestMSSQLConnectionAsync(connectionString),
-                DatabaseProvider.PostgreSQL => await TestPostgreSQLConnectionAsync(connectionString),
-                DatabaseProvider.MySQL => await TestMySQLConnectionAsync(connectionString),
-                DatabaseProvider.Oracle => await TestOracleConnectionAsync(connectionString),
-                _ => false
-            };
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    //        return provider switch
+    //        {
+    //            DatabaseProvider.MSSQL => await TestMSSQLConnectionAsync(connectionString),
+    //            DatabaseProvider.PostgreSQL => await TestPostgreSQLConnectionAsync(connectionString),
+    //            DatabaseProvider.MySQL => await TestMySQLConnectionAsync(connectionString),
+    //            DatabaseProvider.Oracle => await TestOracleConnectionAsync(connectionString),
+    //            _ => false
+    //        };
+    //    }
+    //    catch
+    //    {
+    //        return false;
+    //    }
+    //}
 
     private async Task<bool> TestMSSQLConnectionAsync(string connectionString)
     {

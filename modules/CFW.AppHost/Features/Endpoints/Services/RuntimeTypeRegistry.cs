@@ -1,12 +1,12 @@
 ﻿using CFW.AppHost.Features.Endpoints.Configurations;
-using CFW.AppHost.Infrastructures.RunTimeDevelopments.Models;
+using CFW.AppHost.Features.Endpoints.Models;
 using CFW.Core.Builders.RuntimeTypeBuilders;
 using CFW.Core.Dependencies;
 using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace CFW.AppHost.Infrastructures.RunTimeDevelopments.Services;
+namespace CFW.AppHost.Features.Endpoints.Services;
 
 public class RuntimeTypeRegistry : ISingletonService
 {
@@ -83,7 +83,7 @@ public class RuntimeTypeRegistry : ISingletonService
 
         var loadedType = Assembly.LoadFrom(fullPath).GetType(fullTypeName);
 
-        _runtimeTypes.Add(loadedType);
-        return loadedType;
+        _runtimeTypes.Add(loadedType!);
+        return loadedType!;
     }
 }

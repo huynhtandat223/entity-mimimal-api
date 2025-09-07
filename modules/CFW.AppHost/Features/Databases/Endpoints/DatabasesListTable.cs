@@ -1,5 +1,6 @@
-﻿using CFW.AppHost.Features.Databases.Services;
-using CFW.AppHost.Features.Databases.ViewModels;
+﻿using CFW.AppHost.Features.Databases.ViewModels;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Models;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Services;
 using CFW.DynamicApi;
 using Microsoft.EntityFrameworkCore.Scaffolding;
 
@@ -27,7 +28,7 @@ public class DatabasesListTable
         public async Task<IResult<Response>> Handle(RequestModel<DatabaseConfiguration> request, CancellationToken cancellationToken)
         {
             var model = request.Model;
-            var connectionString = _connectionStringBuilder.BuildConnectionString(model.DatabaseProvider, model);
+            var connectionString = _connectionStringBuilder.BuildConnectionString(model);
 
             var serviceProvider = _designTimeService.CreateDesignTimeServiceProvider(connectionString, model.DatabaseProvider);
             var dbModelFactory = serviceProvider.GetRequiredService<IDatabaseModelFactory>();

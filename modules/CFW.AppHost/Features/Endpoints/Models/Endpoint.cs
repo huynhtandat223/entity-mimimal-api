@@ -1,5 +1,4 @@
-﻿using CFW.AppHost.Infrastructures.RunTimeDevelopments.Models;
-using CFW.Core.Entities;
+﻿using CFW.Core.Entities;
 
 namespace CFW.AppHost.Features.Endpoints.Models;
 

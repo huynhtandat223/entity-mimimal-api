@@ -1,7 +1,7 @@
 ﻿using CFW.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 
-namespace CFW.AppHost.Infrastructures.RunTimeDevelopments.Models;
+namespace CFW.AppHost.Features.Endpoints.Models;
 
 public class RuntimeEntityDefinition : IEntity<Guid>
 {

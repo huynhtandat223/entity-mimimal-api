@@ -1,7 +1,6 @@
-﻿using CFW.AppHost.Infrastructures.RunTimeDevelopments.Services;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
-namespace CFW.AppHost.Infrastructures.RunTimeDevelopments;
+namespace CFW.AppHost.Features.Endpoints.Services;
 
 public class RuntimeDbContext : DbContext
 {
@@ -21,5 +20,19 @@ public class RuntimeDbContext : DbContext
         {
             builder.Entity(type);
         }
+    }
+}
+
+public class RuntimeDbContext<T> : DbContext
+    where T : class
+{
+    public RuntimeDbContext(DbContextOptions<RuntimeDbContext<T>> options) : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        builder.Entity<T>();
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace CFW.AppHost.Features.Databases.Models;
+namespace CFW.AppHost.Infrastructures.DbContextExtensions.Models;
 
 public class TempDbContext : DbContext
 {

@@ -46,7 +46,7 @@ public class DynamicApiRegistry
                 var apiOpration = ActivatorUtilities
                     .CreateInstance(_serviceProvider, apiOprationType, operation.TargetType) as DynamicApiOperation;
                 apiOpration!.HttpMethod = operation.HttpMethod.ToString();
-                apiOpration.Route = operation.RouteName ?? group.Key; //use ApiOperation attr
+                apiOpration.Route = operation.RouteName!; //use ApiOperation attr it can null
                 apiOpration.EntityGroup = apiGroup;
                 apiGroup.Operations.Add(apiOpration);
             }

@@ -1,9 +1,9 @@
 ﻿global using CFW.Core.Results;
 global using CFW.Core.Utils;
+using CFW.AppHost.Features.Endpoints.Services;
 using CFW.AppHost.Features.Identity.Services.Extensions;
 using CFW.AppHost.Features.Shared;
 using CFW.AppHost.Infrastructures.IXBrowserGateway;
-using CFW.AppHost.Infrastructures.RunTimeDevelopments;
 using CFW.Core.Dependencies;
 using CFW.DynamicApi.Entensions;
 using Microsoft.EntityFrameworkCore;
@@ -44,10 +44,9 @@ if (!isTesting || true)
     //.ReplaceService<IModelCacheKeyFactory, MyModelCacheKeyFactory>()
     .UseSqlite("Filename=database.db"));
 
-    builder.Services.AddDbContext<RuntimeDbContext>(options =>
-   options
-   .ReplaceService<IModelCacheKeyFactory, MyModelCacheKeyFactory>()
-   .UseSqlite("Filename=database.db"));
+    builder.Services.AddDbContext<RuntimeDbContext>(options => options
+    .ReplaceService<IModelCacheKeyFactory, MyModelCacheKeyFactory>()
+    .UseSqlite("Filename=database.db"));
 
     builder.Services
         .AddDynamicApi("/api/v1/", container =>

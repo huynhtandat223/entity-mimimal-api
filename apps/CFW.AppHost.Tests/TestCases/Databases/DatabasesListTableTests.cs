@@ -1,5 +1,5 @@
 ﻿using CFW.AppHost.Features.Databases.Endpoints;
-using CFW.AppHost.Features.Databases.Models;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Models;
 using Shouldly;
 using System.Net.Http.Json;
 using Xunit.Abstractions;
@@ -19,7 +19,7 @@ public class DatabasesListTableTests : BaseTests, IAssemblyFixture<AppFactory>
         var client = _factory.CreateClient();
 
         //Act
-        var request = new DatabasesListTable.Request
+        var request = new
         {
             //ConnectionString = "Server=localhost\\SQLEXPRESS;\r\nDatabase=cirrusvm;\r\nUser ID=sa;\r\nPassword=123456;\r\nEncrypt=True;\r\nTrustServerCertificate=True;\r\nMultipleActiveResultSets=True;\r\n",
             DatabaseProvider = DatabaseProvider.MSSQL

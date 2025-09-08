@@ -1,5 +1,5 @@
-﻿using CFW.AppHost.Features.Identity.Models;
-using CFW.AppHost.Features.Shared;
+﻿using CFW.AppHost.Features.Core;
+using CFW.AppHost.Features.Identity.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace CFW.AppHost.Features.Identity.Services.Extensions;

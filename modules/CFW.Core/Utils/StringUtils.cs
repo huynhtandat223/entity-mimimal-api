@@ -121,7 +121,4 @@ public static class StringUtils
 
     public static bool IsNotNullOrEmpty(this Guid guid)
        => guid != Guid.Empty;
-
-    public static bool IsNullOrEmpty(this Guid? guid)
-       => guid.GetValueOrDefault() == Guid.Empty;
 }

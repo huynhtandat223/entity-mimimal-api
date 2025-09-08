@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CFW.DynamicApi.Buiders;
+
+[Obsolete("Is need to refactor or simplify ????")]
 public class DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> : DynamicEntityGroupBuilder<TEntity, TDbContext>
     where TEntity : class
     where TDbContext : DbContext

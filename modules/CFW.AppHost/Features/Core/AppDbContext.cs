@@ -3,7 +3,7 @@ using CFW.Core.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace CFW.AppHost.Features.Shared;
+namespace CFW.AppHost.Features.Core;
 
 public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {

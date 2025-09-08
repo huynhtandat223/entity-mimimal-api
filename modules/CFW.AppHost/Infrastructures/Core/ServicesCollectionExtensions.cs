@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Reflection;
 
 namespace CFW.Core.Dependencies;
@@ -70,15 +68,15 @@ public static class ServicesCollectionExtensions
         return builder;
     }
 
-    public static async Task<IHost> RunModules(this IHost host)
+    public static async Task<IHost> RunModules(this WebApplication app)
     {
-        using var scope = host.Services.CreateScope();
+        using var scope = app.Services.CreateScope();
         var modules = scope.ServiceProvider.GetServices<IModuleInitializer>();
         foreach (var module in modules)
         {
-            await module.RunModule(host);
+            await module.RunModule(app);
         }
 
-        return host;
+        return app;
     }
 }

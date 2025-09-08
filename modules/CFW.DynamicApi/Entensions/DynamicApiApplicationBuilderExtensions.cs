@@ -1,16 +1,27 @@
 ﻿using CFW.DynamicApi.Buiders;
 using CFW.DynamicApi.Interceptors.OData;
-using CFW.DynamicApi.OpenApiTransformers;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData;
+using Microsoft.Win32;
 using Scalar.AspNetCore;
 using System.Reflection;
 using System.Text;
 
 namespace CFW.DynamicApi.Entensions;
+
+/// <summary>
+/// Flow: In app startup, dev pass routePrefix, container configuration action to config DefaultPageSize, ...etc
+/// DI will be add singleton ContainerConfiguration instance after it execute container configuration action.
+/// DI scan assemblies to find IEndpointConfigurator implementation and add transient  
+///     -> When app.Buid:  DynamicEntityGroupBuilder builder intance create with purpose: contains authen, allowed properties, ... of groups 
+///     
+/// /// DI scan assemblies to find ApiOperationAttribute implementation and add transient 
+///     -> 
+/// </summary>
 
 public static class DynamicApiApplicationBuilderExtensions
 {
@@ -22,7 +33,8 @@ public static class DynamicApiApplicationBuilderExtensions
     {
         services.AddOpenApi(o =>
         {
-            o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
+            //o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
+            //o.AddDocumentTransformer<MyDocumentTransformer>();
         });
 
         var containerConfig = new ContainerConfiguration
@@ -43,7 +55,7 @@ public static class DynamicApiApplicationBuilderExtensions
             .Where(t => t.IsClass && !t.IsAbstract)
             .ToList();
 
-        //Register endpoint configurators
+        //Register endpoint configurators - config endpoints in module initialier
         var endpointConfigurators = types
             .Where(x => typeof(IEndpointConfigurator).IsAssignableFrom(x))
             .ToList();
@@ -53,7 +65,7 @@ public static class DynamicApiApplicationBuilderExtensions
             services.AddTransient(typeof(IEndpointConfigurator), type);
         }
 
-        //Register api attributes
+        //Register api attributes - config endpoint in handler.
         var operationAttributes = types
             .Where(x => x.GetCustomAttribute<ApiOperationAttribute>() is not null)
             .Select(x => new
@@ -68,14 +80,14 @@ public static class DynamicApiApplicationBuilderExtensions
         }
         services.AddSingleton(operationAttributes.Select(x => x.Attribute).ToList());
 
-        //interceptors
-        services.TryAddTransient(typeof(ODataFeatureInterceptor<>));
-
+        // Use to init default paramter of IEndpointConfigurator instance.
         services.TryAddTransient(typeof(DynamicEntityGroupBuilder));
         services.TryAddTransient(typeof(DynamicEntityGroupBuilder<,>));
         services.TryAddTransient(typeof(DynamicEntityGroupBuilder<,,>));
 
-        //Odata services
+        //Odata services interceptors
+        services.TryAddTransient(typeof(ODataFeatureInterceptor<>));
+
         services.TryAddSingleton(_ =>
         {
             var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
@@ -98,10 +110,9 @@ public static class DynamicApiApplicationBuilderExtensions
         if (containerConfigs.Any() == false)
             throw new InvalidOperationException("No ContainerConfiguration found. Please call AddDynamicApi first.");
 
+        var registry = scope.ServiceProvider.GetRequiredService<DynamicApiRegistry>();
         foreach (var containerConfig in containerConfigs)
         {
-            var registry = scope.ServiceProvider.GetRequiredService<DynamicApiRegistry>();
-
             var configurators = scope.ServiceProvider.GetServices<IEndpointConfigurator>();
             foreach (var configurator in configurators)
             {
@@ -114,8 +125,19 @@ public static class DynamicApiApplicationBuilderExtensions
                 registry.RegisterApiGroup(builder);
             }
 
-            var dispatcher = new DynamicApiDispatcher(registry, containerConfig);
-            dispatcher.MapEndpoints(app);
+            var containerGroupBuilder = app.MapGroup(containerConfig.RoutePrefix);
+
+            foreach (var apiGroup in registry.ApiGroups)
+            {
+                var group = containerGroupBuilder
+                    .MapGroup(apiGroup.RouteName)
+                    .WithTags(apiGroup.RouteName);
+
+                foreach (var operation in apiGroup.Operations)
+                {
+                    operation.MapApi(group);
+                }
+            }
         }
 
         app.MapOpenApi();

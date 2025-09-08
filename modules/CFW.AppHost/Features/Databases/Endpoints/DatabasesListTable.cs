@@ -1,4 +1,5 @@
-﻿using CFW.AppHost.Features.Databases.ViewModels;
+﻿using CFW.AppHost.Features.Core;
+using CFW.AppHost.Features.Databases.ViewModels;
 using CFW.AppHost.Infrastructures.DbContextExtensions.Models;
 using CFW.AppHost.Infrastructures.DbContextExtensions.Services;
 using CFW.DynamicApi;
@@ -13,16 +14,19 @@ public class DatabasesListTable
         public IEnumerable<DatabaseTableViewModel> Value { get; set; } = Enumerable.Empty<DatabaseTableViewModel>();
     }
 
-    [ApiOperation("databases/tables")]
+    [ApiOperation("databases", RouteName = "tables")]
     public class Handler : IRequestHandler<DatabaseConfiguration, Response>
     {
         private readonly DesignTimeService _designTimeService;
         private readonly ConnectionStringBuilder _connectionStringBuilder;
+        private readonly AppRequestContext _appRequestContext;
 
-        public Handler(DesignTimeService designTimeService, ConnectionStringBuilder connectionStringBuilder)
+        public Handler(DesignTimeService designTimeService, ConnectionStringBuilder connectionStringBuilder
+            , AppRequestContext appRequestContext)
         {
             _designTimeService = designTimeService;
             _connectionStringBuilder = connectionStringBuilder;
+            _appRequestContext = appRequestContext;
         }
 
         public async Task<IResult<Response>> Handle(RequestModel<DatabaseConfiguration> request, CancellationToken cancellationToken)

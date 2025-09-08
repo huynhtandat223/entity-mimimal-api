@@ -10,10 +10,9 @@ public class RuntimeDbMigrator : IScopedService
 {
     private readonly RuntimeTypeRegistry _runtimeTypeRegistry;
     private readonly RuntimeDbContext _db;
-    public RuntimeDbMigrator(RuntimeTypeRegistry runtimeTypeRegistry, RuntimeDbContext db)
+    public RuntimeDbMigrator(RuntimeTypeRegistry runtimeTypeRegistry)
     {
         _runtimeTypeRegistry = runtimeTypeRegistry;
-        _db = db;
     }
 
     public Task CreateMigration(string migrationName, string folderPath)

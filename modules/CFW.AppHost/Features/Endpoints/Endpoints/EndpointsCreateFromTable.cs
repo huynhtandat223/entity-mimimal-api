@@ -1,6 +1,6 @@
-﻿using CFW.AppHost.Features.Endpoints.Models;
+﻿using CFW.AppHost.Features.Core;
+using CFW.AppHost.Features.Endpoints.Models;
 using CFW.AppHost.Features.Endpoints.Services;
-using CFW.AppHost.Features.Shared;
 using CFW.AppHost.Infrastructures.DbContextExtensions.Models;
 using CFW.AppHost.Infrastructures.DbContextExtensions.Services;
 using CFW.DynamicApi;
@@ -35,7 +35,7 @@ public class EndpointsCreateFromTable
         public Models.ContainerConfiguration ContainerConfiguration { set; get; } = default!;
     }
 
-    [ApiOperation("endpoints/tables")]
+    [ApiOperation("endpoints", RouteName = "/tables")]
     public class Handler : IRequestHandler<Request, Endpoint>
     {
         private readonly RuntimeTypeRegistry _runtimeTypeRegistry;

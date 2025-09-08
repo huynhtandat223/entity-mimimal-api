@@ -1,5 +1,5 @@
-﻿using CFW.AppHost.Features.Endpoints.Endpoints;
-using CFW.AppHost.Features.Shared;
+﻿using CFW.AppHost.Features.Core;
+using CFW.AppHost.Features.Endpoints.Endpoints;
 using CFW.CoreTestings.Logging;
 using CFW.DynamicApi.Entensions;
 using Microsoft.AspNetCore.Hosting;
@@ -16,7 +16,6 @@ public class BaseTests
 {
     protected WebApplicationFactory<Program> _factory;
     protected readonly ITestOutputHelper _testOutputHelper;
-
 
     public BaseTests(ITestOutputHelper testOutputHelper, AppFactory factory
         , string? odataPrefix = null, Type[]? types = null)

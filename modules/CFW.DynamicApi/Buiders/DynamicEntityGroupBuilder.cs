@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace CFW.DynamicApi.Buiders;
 
+[Obsolete("Is need to refactor or simplify ????")]
 public class DynamicEntityGroupBuilder
 {
     public required string RouteName { get; set; }
@@ -56,6 +57,7 @@ public class DynamicEntityGroupBuilder
     }
 }
 
+[Obsolete("Is need to refactor or simplify ????")]
 public class DynamicEntityGroupBuilder<TEntity> : DynamicEntityGroupBuilder where TEntity : class
 {
     protected DynamicEntityGroupBuilder()

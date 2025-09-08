@@ -1,9 +1,9 @@
-﻿using CFW.AppHost.Features.Shared;
+﻿using CFW.AppHost.Features.Core;
 using CFW.DynamicApi;
 
 namespace CFW.AppHost.Features.Endpoints.Endpoints;
 
-[ApiOperation("endpoints/container-configurations")]
+[ApiOperation("endpoints", RouteName = "container-configurations")]
 public class ContainerConfigurationsCreate : IRequestHandler<ContainerConfiguration, Models.ContainerConfiguration>
 {
     public async Task<IResult<Models.ContainerConfiguration>> Handle(RequestModel<ContainerConfiguration> request

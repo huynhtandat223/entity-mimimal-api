@@ -1,9 +1,8 @@
-﻿using CFW.AppHost.Features.Shared;
+﻿using CFW.AppHost.Features.Core;
 using CFW.Core.Dependencies;
 using CFW.DynamicApi;
 using CFW.DynamicApi.Interceptors.OData;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using HttpMethod = CFW.AppHost.Features.Endpoints.Models.HttpMethod;
@@ -38,21 +37,24 @@ public record RouteDef
 public class RuntimeEndpointRegister : ITransientService
 {
     private static readonly Dictionary<Type, Func<HttpContext, RuntimeTypeRegistry, Task<object?>>> _getQueryableMethodCache = new();
-    private static readonly ConcurrentDictionary<RouteDef, Models.Endpoint> _concurrentDictionary
-        = new();
 
-    private readonly AppDbContext _db;
+    private readonly AppRequestContext _appRequestContext;
     private readonly RuntimeTypeRegistry _runtimeTypeRegistry;
 
-    public RuntimeEndpointRegister(AppDbContext db, RuntimeTypeRegistry runtimeTypeRegistry)
+    public RuntimeEndpointRegister(RuntimeTypeRegistry runtimeTypeRegistry
+        , AppRequestContext appRequestContext)
     {
-        _db = db;
         _runtimeTypeRegistry = runtimeTypeRegistry;
+        _appRequestContext = appRequestContext;
     }
 
     public async Task ResiterEndpoints(IEndpointRouteBuilder routeBuilder)
     {
-        var containerConfigurations = await _db
+        var db = await _appRequestContext.GetOrCreateDbContext();
+        if (db is null)
+            return;
+
+        var containerConfigurations = await db
             .Set<Models.ContainerConfiguration>()
             .Where(x => x.Endpoints!.Any())
             .Include(x => x.Endpoints)!.ThenInclude(x => x.RuntimeEntityDefinition).ThenInclude(x => x!.Properties)

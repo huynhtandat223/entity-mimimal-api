@@ -1,5 +1,5 @@
-﻿using CFW.AppHost.Features.Identity.Models;
-using CFW.AppHost.Features.Shared;
+﻿using CFW.AppHost.Features.Core;
+using CFW.AppHost.Features.Identity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +25,7 @@ public static class IdentitySeeder
             {
                 Id = Guid.NewGuid(),
                 Name = "System",
-                ConnectionString = string.Empty, // Nếu cần dynamic thì xử lý sau
+                ConnectionString = string.Empty,
                 CreatedAt = DateTime.UtcNow
             };
             context.Tenants.Add(systemTenant);

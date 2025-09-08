@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 namespace CFW.DynamicApi.Buiders
 #pragma warning restore IDE0161 // Convert to file-scoped namespace
 {
+    [Obsolete("Is need to refactor or simplify ????")]
     public class DynamicEntityGroupBuilder<TEntity, TDbContext> : DynamicEntityGroupBuilder<TEntity>
     where TEntity : class
     where TDbContext : DbContext

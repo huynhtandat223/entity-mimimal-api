@@ -22,11 +22,8 @@ public class ModuleInitializer : IModuleInitializer
         await Task.CompletedTask;
     }
 
-    public async Task RunModule(IHost app)
+    public async Task RunModule(WebApplication app)
     {
-        if (app is not IEndpointRouteBuilder endpointRouteBuilder)
-            throw new InvalidOperationException();
-
-        await _runtimeEndpointRegister.ResiterEndpoints(endpointRouteBuilder);
+        await _runtimeEndpointRegister.ResiterEndpoints(app);
     }
 }

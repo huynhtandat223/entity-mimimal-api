@@ -1,5 +1,5 @@
-﻿using CFW.AppHost.Features.Endpoints.Services;
-using CFW.AppHost.Features.Shared;
+﻿using CFW.AppHost.Features.Core;
+using CFW.AppHost.Features.Endpoints.Services;
 using CFW.DynamicApi;
 using CFW.DynamicApi.Entensions;
 using Endpoint = CFW.AppHost.Features.Endpoints.Models.Endpoint;

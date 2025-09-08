@@ -131,6 +131,7 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
     {
         _targetType = targetType;
     }
+
     public override void MapApi(RouteGroupBuilder group)
     {
         var operation = this;

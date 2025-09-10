@@ -54,10 +54,10 @@ public class DynamicApiOperation
         return this;
     }
 
-    public virtual void MapApi(RouteGroupBuilder group)
+    public virtual RouteHandlerBuilder MapApi(RouteGroupBuilder group)
     {
         var operation = this;
-        var route = group.MapMethods(operation.Route, [operation.HttpMethod], async (HttpContext ctx) =>
+        return group.MapMethods(operation.Route, [operation.HttpMethod], async (HttpContext ctx) =>
         {
             // Initialize interceptors once
             var interceptors = operation.InterceptorFactories
@@ -92,10 +92,10 @@ public class DynamicApiOperation<TKey> : DynamicApiOperation
 {
     public Func<HttpContext, TKey, Task<object?>>? ModelHandler { get; set; }
 
-    public override void MapApi(RouteGroupBuilder group)
+    public override RouteHandlerBuilder MapApi(RouteGroupBuilder group)
     {
         var operation = this;
-        var route = group.MapMethods(operation.Route, [operation.HttpMethod], async (HttpContext ctx, TKey key) =>
+        return group.MapMethods(operation.Route, [operation.HttpMethod], async (HttpContext ctx, TKey key) =>
         {
             // Initialize interceptors once
             var interceptors = operation.InterceptorFactories
@@ -132,11 +132,11 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
         _targetType = targetType;
     }
 
-    public override void MapApi(RouteGroupBuilder group)
+    public override RouteHandlerBuilder MapApi(RouteGroupBuilder group)
     {
         var operation = this;
 
-        group.MapMethods(operation.Route ?? "/", [operation.HttpMethod]
+        return group.MapMethods(operation.Route ?? "/", [operation.HttpMethod]
             , async (HttpContext ctx, QueryRequest<TRequest> request) =>
         {
             if (request is null)

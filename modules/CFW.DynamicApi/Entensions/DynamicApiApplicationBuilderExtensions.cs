@@ -1,12 +1,11 @@
 ﻿using CFW.DynamicApi.Buiders;
 using CFW.DynamicApi.Interceptors.OData;
+using CFW.DynamicApi.OpenApiTransformers;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData;
-using Microsoft.Win32;
 using Scalar.AspNetCore;
 using System.Reflection;
 using System.Text;
@@ -34,7 +33,8 @@ public static class DynamicApiApplicationBuilderExtensions
         services.AddOpenApi(o =>
         {
             //o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
-            //o.AddDocumentTransformer<MyDocumentTransformer>();
+            o.AddDocumentTransformer<DocumentTransformer>();
+            o.AddSchemaTransformer<OpenApiSchemaTransformer>();
         });
 
         var containerConfig = new ContainerConfiguration
@@ -125,19 +125,7 @@ public static class DynamicApiApplicationBuilderExtensions
                 registry.RegisterApiGroup(builder);
             }
 
-            var containerGroupBuilder = app.MapGroup(containerConfig.RoutePrefix);
-
-            foreach (var apiGroup in registry.ApiGroups)
-            {
-                var group = containerGroupBuilder
-                    .MapGroup(apiGroup.RouteName)
-                    .WithTags(apiGroup.RouteName);
-
-                foreach (var operation in apiGroup.Operations)
-                {
-                    operation.MapApi(group);
-                }
-            }
+            registry.MapApi(app, containerConfig);
         }
 
         app.MapOpenApi();

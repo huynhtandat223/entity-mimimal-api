@@ -61,6 +61,11 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> : DynamicEntit
         return this;
     }
 
+    /// <summary>
+    /// PATCH
+    /// </summary>
+    /// <param name="operationConfig"></param>
+    /// <returns></returns>
     public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddPartialUpdatingApi(Action<DynamicApiOperation>? operationConfig = null)
     {
         var result = new DynamicApiOperation<TKey>

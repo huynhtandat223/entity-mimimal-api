@@ -1,4 +1,6 @@
 ﻿using CFW.DynamicApi.Buiders;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CFW.DynamicApi;
@@ -55,5 +57,29 @@ public class DynamicApiRegistry
         }
     }
 
-    public IReadOnlyCollection<DynamicEntityGroupBuilder> ApiGroups => _apiGroups.AsReadOnly();
+    internal void MapApi(WebApplication app, ContainerConfiguration containerConfig)
+    {
+        var containerGroupBuilder = app
+            .MapGroup(containerConfig.RoutePrefix)
+            .WithGroupName(containerConfig.RoutePrefix);
+
+        foreach (var apiGroup in _apiGroups)
+        {
+            var group = containerGroupBuilder
+                .MapGroup(apiGroup.RouteName)
+                .WithGroupName(apiGroup.RouteName);
+
+            if (!apiGroup.IsAllowAnonymous)
+            {
+                group = group.RequireAuthorization(apiGroup.AuthorizeDatas.ToArray());
+            }
+
+            foreach (var operation in apiGroup.Operations)
+            {
+                var routeHandlerBuilder = operation.MapApi(group);
+                routeHandlerBuilder
+                    .WithTags(apiGroup.RouteName);
+            }
+        }
+    }
 }

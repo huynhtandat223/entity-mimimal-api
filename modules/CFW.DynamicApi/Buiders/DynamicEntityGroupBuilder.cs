@@ -1,10 +1,13 @@
 ﻿using CFW.Core.Utils;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Routing;
 using System.Linq.Expressions;
 using System.Text.Json.Serialization;
 
 namespace CFW.DynamicApi.Buiders;
+
+
 
 [Obsolete("Is need to refactor or simplify ????")]
 public class DynamicEntityGroupBuilder
@@ -16,6 +19,10 @@ public class DynamicEntityGroupBuilder
     protected readonly List<string> _includeProperties = new();
     protected readonly List<string> _excludeProperties = new();
     protected HttpMethod _httpMethod = HttpMethod.Get;
+
+    public bool IsAllowAnonymous { private set; get; } = false;
+
+    internal IList<IAuthorizeData> AuthorizeDatas => new List<IAuthorizeData>();
 
     protected virtual IEnumerable<PropertyMetadata> ResolveSelectedProperties() => Enumerable.Empty<PropertyMetadata>();
 

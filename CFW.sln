@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.HangfireExtentions", "m
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.Core.EfCoreExtensions", "modules\CFW.Core.EfCoreExtensions\CFW.Core.EfCoreExtensions.csproj", "{ED4CC67A-0BF1-367C-CE81-C0D890904161}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.AppHost.Blazor", "apps\CFW.AppHost.Blazor\CFW.AppHost.Blazor.csproj", "{2B58C7A6-BED6-4388-968F-8BA39C57E592}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,10 @@ Global
 		{ED4CC67A-0BF1-367C-CE81-C0D890904161}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED4CC67A-0BF1-367C-CE81-C0D890904161}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED4CC67A-0BF1-367C-CE81-C0D890904161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B58C7A6-BED6-4388-968F-8BA39C57E592}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B58C7A6-BED6-4388-968F-8BA39C57E592}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B58C7A6-BED6-4388-968F-8BA39C57E592}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B58C7A6-BED6-4388-968F-8BA39C57E592}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -79,6 +85,7 @@ Global
 		{0E4D02EC-7072-85D1-0105-5ACFA5C5761B} = {5005F3E5-E5B3-40C7-91A3-787A8275B9C5}
 		{5759A8B7-34E1-4663-8314-5EF8E6CA727D} = {5005F3E5-E5B3-40C7-91A3-787A8275B9C5}
 		{ED4CC67A-0BF1-367C-CE81-C0D890904161} = {5005F3E5-E5B3-40C7-91A3-787A8275B9C5}
+		{2B58C7A6-BED6-4388-968F-8BA39C57E592} = {612884DF-C8A4-428F-90F5-33A06A1E979E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {252AB59C-0E86-425E-BCDA-64B034AFB78F}

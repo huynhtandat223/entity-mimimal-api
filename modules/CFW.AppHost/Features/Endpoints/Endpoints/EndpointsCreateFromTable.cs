@@ -1,11 +1,13 @@
 ﻿using CFW.AppHost.Features.Core;
 using CFW.AppHost.Features.Endpoints.Models;
-using CFW.AppHost.Features.Endpoints.Services;
-using CFW.AppHost.Infrastructures.DbContextExtensions.Models;
+using CFW.AppHost.Features.Endpoints.ViewModels;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Models.Runtimes;
 using CFW.AppHost.Infrastructures.DbContextExtensions.Services;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Services.Runtimes;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Utils;
 using CFW.DynamicApi;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Scaffolding;
-using System.Text.RegularExpressions;
 using Endpoint = CFW.AppHost.Features.Endpoints.Models.Endpoint;
 
 namespace CFW.AppHost.Features.Endpoints.Endpoints;
@@ -14,7 +16,7 @@ public class EndpointsCreateFromTable
 {
     public class Request
     {
-        public Guid Id { set; get; }
+        public Guid? Id { set; get; }
 
         public string Path { set; get; } = string.Empty;
 
@@ -30,13 +32,13 @@ public class EndpointsCreateFromTable
 
         public string TableName { get; set; } = string.Empty;
 
-        public DatabaseConfiguration DatabaseConfiguration { get; set; } = default!;
-
-        public Models.ContainerConfiguration ContainerConfiguration { set; get; } = default!;
+        public ContainerConfigurationViewModel ContainerConfiguration { set; get; } = default!;
     }
 
-    [ApiOperation("endpoints", RouteName = "/tables")]
-    public class Handler : IRequestHandler<Request, Endpoint>
+    public class Response { }
+
+    [ApiOperation("endpoints", RouteName = "/table-sources")]
+    public class Handler : IRequestHandler<Request, Response>
     {
         private readonly RuntimeTypeRegistry _runtimeTypeRegistry;
         private readonly ConnectionStringBuilder _connectionStringBuilder;
@@ -54,18 +56,18 @@ public class EndpointsCreateFromTable
             _db = db;
         }
 
-        public async Task<IResult<Endpoint>> Handle(RequestModel<Request> request, CancellationToken cancellationToken)
+        public async Task<IResult<Response>> Handle(RequestModel<Request> request, CancellationToken cancellationToken)
         {
-            var result = request.Model.JsonConvert<Endpoint>();
+            var endpoint = request.Model.JsonConvert<Endpoint>();
             var model = request.Model;
-            var dbConfig = model.DatabaseConfiguration;
-            var connectionString = _connectionStringBuilder.BuildConnectionString(dbConfig);
+            var result = new Response();
 
-            var serviceProvider = _designTimeService.CreateDesignTimeServiceProvider(connectionString, dbConfig.DatabaseProvider);
+            var serviceProvider = DbContextUtils.CreateDesignTimeServiceProvider(_db);
             var dbModelFactory = serviceProvider.GetRequiredService<IDatabaseModelFactory>();
-            var dbModel = dbModelFactory.Create(connectionString, new DatabaseModelFactoryOptions());
+            var dbModel = dbModelFactory.Create(_db.Database.GetConnectionString()!, new DatabaseModelFactoryOptions());
 
-            var table = dbModel.Tables.FirstOrDefault(x => x.Name.Equals(model.TableName, StringComparison.CurrentCultureIgnoreCase));
+            var table = dbModel.Tables
+                .FirstOrDefault(x => x.Name.Equals(model.TableName, StringComparison.CurrentCultureIgnoreCase));
 
             if (table is null)
                 return result.Notfound();
@@ -83,63 +85,19 @@ public class EndpointsCreateFromTable
                     IsKey = table.PrimaryKey!.Columns[0].Name == x.Name,
                     IsNullable = x.IsNullable,
                     IsRequired = false,
-                    Type = GetClrType(x.StoreType!).AssemblyQualifiedName!,
+                    Type = x.GetClrType().AssemblyQualifiedName!,
                 }).ToList()
             };
 
             _runtimeTypeRegistry.CreateTypeAddLoad(runtimeEntityDef);
-            result.RuntimeEntityDefinition = runtimeEntityDef;
+            endpoint.RuntimeEntityDefinition = runtimeEntityDef;
 
             //Save entity
-            _db.Set<Endpoint>().Add(result);
+            _db.Set<Endpoint>().Add(endpoint);
             await _db.SaveChangesAsync();
 
-            result.ContainerConfiguration.Endpoints = null; //remove ref to prevent json serializer failed.
+            endpoint.ContainerConfiguration.Endpoints = null; //remove ref to prevent json serializer failed.
             return result.Created();
         }
-
-        private static readonly Regex LengthRegex = new Regex(@"\((max|\d+)\)", RegexOptions.Compiled);
-
-        private static Type GetClrType(string sqlType)
-        {
-            if (string.IsNullOrWhiteSpace(sqlType))
-                throw new ArgumentNullException(nameof(sqlType));
-
-            // Normalize
-            var type = sqlType.Trim().ToLowerInvariant();
-            var baseType = LengthRegex.Replace(type, ""); // strip (xxx) or (max)
-
-            return baseType switch
-            {
-                "uniqueidentifier" => typeof(Guid),
-                "nvarchar" => typeof(string),
-                "varchar" => typeof(string),
-                "nchar" => typeof(string),
-                "char" => typeof(string),
-                "text" => typeof(string),
-                "ntext" => typeof(string),
-
-                "bit" => typeof(bool),
-                "int" => typeof(int),
-                "bigint" => typeof(long),
-                "smallint" => typeof(short),
-                "tinyint" => typeof(byte),
-                "decimal" or "numeric" => typeof(decimal),
-                "money" or "smallmoney" => typeof(decimal),
-                "float" => typeof(double),
-                "real" => typeof(float),
-
-                "date" or "datetime" or "datetime2" or "smalldatetime"
-                                   => typeof(DateTime),
-                "datetimeoffset" => typeof(DateTimeOffset),
-                "time" => typeof(TimeSpan),
-
-                "binary" or "varbinary" or "image"
-                                   => typeof(byte[]),
-
-                _ => throw new NotImplementedException()// fallback if unknown
-            };
-        }
-
     }
 }

@@ -1,0 +1,13 @@
+﻿@inject NavigationManager Nav
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var currentUrl = Nav.Uri;
+            var encoded = Uri.EscapeDataString(currentUrl);
+            Nav.NavigateTo($"/login?returnUrl={encoded}", forceLoad: true);
+        }
+    }
+}

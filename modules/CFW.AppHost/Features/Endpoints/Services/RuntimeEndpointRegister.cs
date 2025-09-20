@@ -1,4 +1,5 @@
 ﻿using CFW.AppHost.Features.Core;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Services.Runtimes;
 using CFW.Core.Dependencies;
 using CFW.DynamicApi;
 using CFW.DynamicApi.Interceptors.OData;
@@ -164,7 +165,7 @@ public class RuntimeEndpointRegister : ITransientService
         var interceptor = serviceProvider.GetRequiredService<ODataFeatureInterceptor<T>>();
 
         var options = new DbContextOptionsBuilder<RuntimeDbContext<T>>()
-            .UseSqlServer("Server=localhost\\SQLEXPRESS;Database=cirrusvm;User ID=sa;Password=123456;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;")
+            .UseSqlServer("Server=localhost\\SQLEXPRESS;Database=db;User ID=sa;Password=123456;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;")
             .Options;
         var db = new RuntimeDbContext<T>(options);
 

@@ -19,7 +19,7 @@ namespace CFW.DynamicApi.Entensions;
 ///     -> When app.Buid:  DynamicEntityGroupBuilder builder intance create with purpose: contains authen, allowed properties, ... of groups 
 ///     
 /// /// DI scan assemblies to find ApiOperationAttribute implementation and add transient 
-///     -> 
+///     -> DynamicApiRegistry init with ApiOperationAttributes list from DI
 /// </summary>
 
 public static class DynamicApiApplicationBuilderExtensions
@@ -32,9 +32,8 @@ public static class DynamicApiApplicationBuilderExtensions
     {
         services.AddOpenApi(o =>
         {
-            //o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
-            o.AddDocumentTransformer<DocumentTransformer>();
-            o.AddSchemaTransformer<OpenApiSchemaTransformer>();
+            o.AddOperationTransformer<OpenApiQueryOperationTransformer>();
+            //o.AddDocumentTransformer<DocumentTransformer>();
         });
 
         var containerConfig = new ContainerConfiguration
@@ -87,6 +86,7 @@ public static class DynamicApiApplicationBuilderExtensions
 
         //Odata services interceptors
         services.TryAddTransient(typeof(ODataFeatureInterceptor<>));
+        services.TryAddTransient(typeof(ODataFeatureInterceptor));
 
         services.TryAddSingleton(_ =>
         {
@@ -129,7 +129,11 @@ public static class DynamicApiApplicationBuilderExtensions
         }
 
         app.MapOpenApi();
-        app.MapScalarApiReference(_ => _.Servers = []);
+        app.MapScalarApiReference(o =>
+        {
+            o.Title = "API Documentation";
+            o.Servers = [];
+        });
 
         return app;
     }

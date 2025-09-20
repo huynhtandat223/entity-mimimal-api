@@ -1,0 +1,33 @@
+﻿{
+  "runtime": "Net90",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "https://localhost:5001/openapi/v1.json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "namespace": "CFW.AppHost.Blazor.ApiClient",
+      "className": "ApiClient",
+      "generateClientInterfaces": true,
+      "injectHttpClient": true,
+      "disposeHttpClient": false,
+      "useBaseUrl": false,
+      "generateOptionalParameters": true,
+      "generateNullableReferenceTypes": true,
+      "useRequestAndResponseSerializationSettings": true,
+      "clientClassAccessModifier": "public",
+
+      "output": "Generated/ApiClient.cs",
+
+      "generateDtoTypes": true,
+      "generateDtoTypesInSeparateFiles": true,
+      "generateClientClasses": true,
+      "generateClientClassesInSeparateFiles": true,
+
+      "jsonLibrary": "SystemTextJson"
+    }
+  }
+
+
+}

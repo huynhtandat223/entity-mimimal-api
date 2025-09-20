@@ -174,14 +174,14 @@ public class RuntimeOpenApiQueryOperationTransformer : IOpenApiOperationTransfor
                     {
                         schema.Type = "integer";
                         schema.Enum = enumValues
-                            .Select(val => (IOpenApiAny)new Microsoft.OpenApi.Any.OpenApiInteger(Convert.ToInt32(val)))
+                            .Select(val => (IOpenApiAny)new OpenApiInteger(Convert.ToInt32(val)))
                             .ToList();
                     }
                     else
                     {
                         schema.Type = "string";
                         schema.Enum = enumValues
-                            .Select(val => (IOpenApiAny)new Microsoft.OpenApi.Any.OpenApiString(val.ToString()))
+                            .Select(val => (IOpenApiAny)new OpenApiString(val.ToString()))
                             .ToList();
                     }
                 }

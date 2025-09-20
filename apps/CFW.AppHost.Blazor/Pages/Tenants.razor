@@ -1,0 +1,91 @@
+﻿@page "/tenants"
+@using System.Linq.Dynamic.Core
+@using CFW.AppHost.Blazor.ApiClient
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject TooltipService TooltipService
+@inject ContextMenuService ContextMenuService
+@inject IApiClient ApiClient
+
+<PageTitle>Tenants Management</PageTitle>
+
+<RadzenDataGrid @ref="grid" @bind-Value=@selectedEmployees SelectionMode="DataGridSelectionMode.Multiple" KeyProperty="Id" IsLoading="@isLoading" Count="@count" Data="@employees"
+                LoadData="@LoadData" FilterPopupRenderMode="PopupRenderMode.OnDemand" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                FilterMode="FilterMode.Advanced" AllowSorting="true" AllowFiltering="true" AllowPaging="true" PageSize="4"
+                PagerHorizontalAlign="HorizontalAlign.Center" ColumnWidth="200px">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(Value4.Id)" Filterable="false" Title="ID" Frozen="true" Width="50px" TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn Property="@nameof(Value4.Name)" Title="Name">
+            <EditTemplate Context="employee">
+                <RadzenTextBox @bind-Value="employee.Name" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+        
+        <RadzenDataGridColumn Context="employee" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+            <Template Context="employee">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                              Click="@(args => grid.EditRow(employee))" @onclick:stopPropagation="true">
+                </RadzenButton>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+    <LoadingTemplate>
+        <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </LoadingTemplate>
+</RadzenDataGrid>
+
+@code {
+    bool isLoading;
+    int count;
+    ODataEnumerable<Value4> employees;
+    IList<Value4> selectedEmployees;
+    RadzenDataGrid<Value4> grid;
+
+    List<string> titles = new List<string> { "Sales Representative", "Vice President, Sales", "Sales Manager", "Inside Sales Coordinator" };
+    IEnumerable<string> selectedTitles;
+
+    async Task OnSelectedTitlesChange(object value)
+    {
+        if (selectedTitles != null && !selectedTitles.Any())
+        {
+            selectedTitles = null;
+        }
+
+        await grid.FirstPage();
+    }
+
+    IEnumerable<string> selectedCustomers;
+
+    async Task OnSelectedCustomersChange(object value)
+    {
+        if (selectedCustomers != null && !selectedCustomers.Any())
+        {
+            selectedCustomers = null;
+        }
+
+        await grid.FirstPage();
+    }
+
+    IEnumerable<Value4> customers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var result = await ApiClient.TenantsGET2Async();
+        customers = result.Value;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+
+        var result = await ApiClient.TenantsGET2Async(filter: args.Filter, top: args.Top, skip: args.Skip, orderby: args.OrderBy, count: true);
+        // Update the Data property
+        employees = result.Value.AsODataEnumerable();
+        // Update the count
+        count = (int)(result.OdataCount ?? 0);
+
+        isLoading = false;
+    }
+}

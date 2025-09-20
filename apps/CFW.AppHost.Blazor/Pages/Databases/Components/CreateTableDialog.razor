@@ -1,0 +1,318 @@
+﻿@using Radzen
+@using Radzen.Blazor
+@inject DialogService DialogService
+
+<RadzenTemplateForm TItem="TableDefinitionViewModel" Data="@tableDefinition" Submit="@OnSubmit">
+    <RadzenStack Gap="1rem">
+        
+        @* Basic Information *@
+        <RadzenFieldset Text="Basic Information">
+            <RadzenStack Gap="0.5rem">
+                <RadzenFormField Text="Namespace" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@tableDefinition.Namespace" 
+                                   Placeholder="Enter namespace" 
+                                   Style="width: 100%;" />
+                    <RadzenRequiredValidator Text="Namespace is required" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Table Name" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@tableDefinition.Name" 
+                                   Placeholder="Enter table name" 
+                                   Style="width: 100%;" />
+                    <RadzenRequiredValidator Text="Table name is required" />
+                </RadzenFormField>
+            </RadzenStack>
+        </RadzenFieldset>
+
+        @* Columns Section *@
+        <RadzenFieldset Text="Columns">
+            <RadzenStack Gap="0.5rem">
+                <RadzenButton Text="Add Column" 
+                              Icon="add" 
+                              ButtonStyle="ButtonStyle.Secondary" 
+                              Size="ButtonSize.Small"
+                              Click="@AddColumn" />
+
+                @if (columns.Any())
+                {
+                    <RadzenDataGrid Data="@columns" 
+                                    AllowFiltering="false" 
+                                    AllowPaging="false" 
+                                    AllowSorting="false"
+                                    EditMode="DataGridEditMode.Single">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="ColumnDefinitionViewModel" Property="Name" Title="Column Name">
+                                <Template Context="column">
+                                    @column.Name
+                                </Template>
+                                <EditTemplate Context="column">
+                                    <RadzenTextBox @bind-Value="column.Name" Style="width: 100%;" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="ColumnDefinitionViewModel" Property="Type" Title="Type">
+                                <Template Context="column">
+                                    @GetFriendlyTypeName(column.Type)
+                                </Template>
+                                <EditTemplate Context="column">
+                                    <RadzenDropDown @bind-Value="column.Type" 
+                                                    Data="@dataTypes" 
+                                                    Style="width: 100%;" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="ColumnDefinitionViewModel" Property="IsKey" Title="Is Key">
+                                <Template Context="column">
+                                    <RadzenCheckBox @bind-Value="column.IsKey" Disabled="true" />
+                                </Template>
+                                <EditTemplate Context="column">
+                                    <RadzenCheckBox @bind-Value="column.IsKey" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="ColumnDefinitionViewModel" Property="IsRequired" Title="Required">
+                                <Template Context="column">
+                                    <RadzenCheckBox @bind-Value="column.IsRequired" Disabled="true" />
+                                </Template>
+                                <EditTemplate Context="column">
+                                    <RadzenCheckBox @bind-Value="column.IsRequired" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="ColumnDefinitionViewModel" Property="IsNullable" Title="Nullable">
+                                <Template Context="column">
+                                    <RadzenCheckBox @bind-Value="column.IsNullable" Disabled="true" />
+                                </Template>
+                                <EditTemplate Context="column">
+                                    <RadzenCheckBox @bind-Value="column.IsNullable" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="ColumnDefinitionViewModel" Filterable="false" Sortable="false" Width="120px">
+                                <Template Context="column">
+                                    <RadzenButton Icon="edit" 
+                                                  ButtonStyle="ButtonStyle.Light" 
+                                                  Size="ButtonSize.ExtraSmall" 
+                                                  Click="@(() => EditColumn(column))" />
+                                    <RadzenButton Icon="delete" 
+                                                  ButtonStyle="ButtonStyle.Danger" 
+                                                  Size="ButtonSize.ExtraSmall" 
+                                                  Click="@(() => DeleteColumn(column))" />
+                                </Template>
+                                <EditTemplate Context="column">
+                                    <RadzenButton Icon="check" 
+                                                  ButtonStyle="ButtonStyle.Success" 
+                                                  Size="ButtonSize.ExtraSmall" 
+                                                  Click="@(() => SaveColumn(column))" />
+                                    <RadzenButton Icon="close" 
+                                                  ButtonStyle="ButtonStyle.Light" 
+                                                  Size="ButtonSize.ExtraSmall" 
+                                                  Click="@(() => CancelEdit(column))" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+            </RadzenStack>
+        </RadzenFieldset>
+
+        @* Relationships Section - Collapsible *@
+        <RadzenCollapse>
+            <RadzenCollapseItem Text="Relationships (Optional)" Icon="link">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenButton Text="Add Relationship" 
+                                  Icon="add" 
+                                  ButtonStyle="ButtonStyle.Secondary" 
+                                  Size="ButtonSize.Small"
+                                  Click="@AddRelationship" />
+
+                    @if (relationships.Any())
+                    {
+                        @foreach (var relationship in relationships)
+                        {
+                            <RadzenCard Style="margin-bottom: 10px;">
+                                <RadzenStack Gap="0.5rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H6">
+                                            @relationship.Name
+                                        </RadzenText>
+                                        <RadzenButton Icon="delete" 
+                                                      ButtonStyle="ButtonStyle.Danger" 
+                                                      Size="ButtonSize.ExtraSmall"
+                                                      Click="@(() => DeleteRelationship(relationship))" />
+                                    </RadzenStack>
+
+                                    <RadzenStack Gap="0.5rem">
+                                        <RadzenFormField Text="Relationship Name" Variant="Variant.Outlined">
+                                            <RadzenTextBox @bind-Value="@relationship.Name" 
+                                                           Placeholder="Enter relationship name" 
+                                                           Style="width: 100%;" />
+                                        </RadzenFormField>
+
+                                        <RadzenRow>
+                                            <RadzenColumn Size="6">
+                                                <RadzenFormField Text="Target Entity" Variant="Variant.Outlined">
+                                                    <RadzenTextBox @bind-Value="@relationship.TargetEntity" 
+                                                                   Placeholder="Enter target entity" 
+                                                                   Style="width: 100%;" />
+                                                </RadzenFormField>
+                                            </RadzenColumn>
+                                            <RadzenColumn Size="6">
+                                                <RadzenFormField Text="Target Property" Variant="Variant.Outlined">
+                                                    <RadzenTextBox @bind-Value="@relationship.TargetProperty" 
+                                                                   Placeholder="Enter target property" 
+                                                                   Style="width: 100%;" />
+                                                </RadzenFormField>
+                                            </RadzenColumn>
+                                        </RadzenRow>
+
+                                        <RadzenFormField Text="Relationship Type" Variant="Variant.Outlined">
+                                            <RadzenDropDown @bind-Value="@relationship.Type" 
+                                                            Data="@relationshipTypes" 
+                                                            Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenStack>
+                                </RadzenStack>
+                            </RadzenCard>
+                        }
+                    }
+                </RadzenStack>
+            </RadzenCollapseItem>
+        </RadzenCollapse>
+
+        @* Form Actions *@
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Cancel" 
+                          ButtonStyle="ButtonStyle.Light" 
+                          Click="@Cancel" />
+            <RadzenButton Text="Create Table" 
+                          ButtonType="ButtonType.Submit" 
+                          ButtonStyle="ButtonStyle.Primary" 
+                          Icon="save" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+
+    public enum RelationshipType
+    {
+        OneToOne,
+        OneToMany,
+        ManyToOne,
+        ManyToMany
+    }
+
+    private TableDefinitionViewModel tableDefinition = new();
+    private List<ColumnDefinitionViewModel> columns = new();
+    private List<RelationshipDefinitionViewModel> relationships = new();
+    
+    private List<string> dataTypes = new()
+    {
+        "System.String",
+        "System.Int32",
+        "System.Int64",
+        "System.Boolean",
+        "System.DateTime",
+        "System.Decimal",
+        "System.Double",
+        "System.Guid"
+    };
+
+    private RelationshipType[] relationshipTypes = Enum.GetValues<RelationshipType>();
+
+    protected override void OnInitialized()
+    {
+        tableDefinition.Properties = columns;
+        tableDefinition.Relationships = relationships;
+    }
+
+    private void AddColumn()
+    {
+        var newColumn = new ColumnDefinitionViewModel
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Column{columns.Count + 1}",
+            Type = "System.String",
+            IsNullable = true
+        };
+        columns.Add(newColumn);
+        StateHasChanged();
+    }
+
+    private void EditColumn(ColumnDefinitionViewModel column)
+    {
+        // Radzen DataGrid handles this automatically
+    }
+
+    private void SaveColumn(ColumnDefinitionViewModel column)
+    {
+        // Radzen DataGrid handles this automatically
+        StateHasChanged();
+    }
+
+    private void CancelEdit(ColumnDefinitionViewModel column)
+    {
+        // Radzen DataGrid handles this automatically
+        StateHasChanged();
+    }
+
+    private void DeleteColumn(ColumnDefinitionViewModel column)
+    {
+        columns.Remove(column);
+        StateHasChanged();
+    }
+
+    private void AddRelationship()
+    {
+        var newRelationship = new RelationshipDefinitionViewModel
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Relationship{relationships.Count + 1}",
+            Type = (int)RelationshipType.OneToMany // Default value, adjust as needed
+        };
+        relationships.Add(newRelationship);
+        StateHasChanged();
+    }
+
+    private void DeleteRelationship(RelationshipDefinitionViewModel relationship)
+    {
+        relationships.Remove(relationship);
+        StateHasChanged();
+    }
+
+    private string GetFriendlyTypeName(string assemblyQualifiedName)
+    {
+        return assemblyQualifiedName switch
+        {
+            "System.String" => "String",
+            "System.Int32" => "Integer",
+            "System.Int64" => "Long",
+            "System.Boolean" => "Boolean",
+            "System.DateTime" => "DateTime",
+            "System.Decimal" => "Decimal",
+            "System.Double" => "Double",
+            "System.Guid" => "Guid",
+            _ => assemblyQualifiedName.Split('.').LastOrDefault() ?? assemblyQualifiedName
+        };
+    }
+
+    private async Task OnSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(tableDefinition.Name) || string.IsNullOrWhiteSpace(tableDefinition.Namespace))
+        {
+            return;
+        }
+
+        tableDefinition.Id = Guid.NewGuid();
+        tableDefinition.Properties = columns;
+        tableDefinition.Relationships = relationships;
+
+        DialogService.Close(tableDefinition);
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(null);
+    }
+}

@@ -63,18 +63,56 @@ public static class ObjectUtils
         return JsonSerializer.Deserialize(value, type, DefaultJsonSeriallizerOptions);
     }
 
-    public static object? GetPropertyValue(this object target, string propName)
+    public static object? GetPropertyValue(this object? target, string propName)
     {
-        if (target is null)
+        if (target == null)
         {
             throw new ArgumentNullException(nameof(target));
         }
 
-        var property = target.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
-        if (property is null)
-            throw new InvalidOperationException($"Property {propName} not found in {target.GetType().Name}");
+        if (string.IsNullOrEmpty(propName))
+        {
+            throw new ArgumentException("Property name cannot be null or empty.", nameof(propName));
+        }
 
-        return property.GetValue(target);
+        var properties = target.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        var property = properties.FirstOrDefault(p => p.Name.Equals(propName, StringComparison.OrdinalIgnoreCase));
+
+        if (property == null)
+        {
+            throw new InvalidOperationException(
+                $"Property '{propName}' not found in type '{target.GetType().FullName}'. Ensure the property exists and is public."
+            );
+        }
+
+        if (!property.CanRead)
+        {
+            throw new InvalidOperationException(
+                $"Property '{propName}' in type '{target.GetType().FullName}' is not readable."
+            );
+        }
+
+        try
+        {
+            var getter = property.GetGetMethod();
+            if (getter == null)
+            {
+                throw new InvalidOperationException(
+                    $"Getter method for property '{propName}' in type '{target.GetType().FullName}' is not available."
+                );
+            }
+
+            var delegateType = typeof(Func<,>).MakeGenericType(target.GetType(), property.PropertyType);
+            var getterDelegate = (dynamic)getter.CreateDelegate(delegateType);
+            return getterDelegate.DynamicInvoke(target);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Error accessing property '{propName}' in type '{target.GetType().FullName}'.",
+                ex
+            );
+        }
     }
 
     public static T SetPropertyValue<T>(this T target, string propName, object? value)

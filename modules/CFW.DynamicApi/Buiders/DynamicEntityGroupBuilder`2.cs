@@ -20,11 +20,14 @@ namespace CFW.DynamicApi.Buiders
             _db = db;
         }
 
-        public DynamicEntityGroupBuilder<TEntity, TDbContext> AddQueryApi(Action<DynamicApiOperation>? operationConfig = null)
+        public DynamicEntityGroupBuilder<TEntity, TDbContext> AddQueryApi(Action<DynamicApiOperation>? operationConfig = null
+            , string name = null)
         {
             var result = new DynamicApiOperation
             {
                 EntityGroup = this,
+                TargetType = typeof(TEntity),
+                Name = name ?? $"Get{typeof(TEntity).Name}List",
                 HttpMethod = HttpMethod.Get.Method,
                 Handler = async (context) =>
                 {
@@ -41,11 +44,14 @@ namespace CFW.DynamicApi.Buiders
         }
 
 
-        public DynamicEntityGroupBuilder<TEntity, TDbContext> AddCreationApi(Action<DynamicApiOperation>? operationConfig = null)
+        public DynamicEntityGroupBuilder<TEntity, TDbContext> AddCreationApi(Action<DynamicApiOperation>? operationConfig = null
+            , string name = null)
         {
             var result = new DynamicApiOperation
             {
+                Name = name ?? $"Create{typeof(TEntity).Name}",
                 EntityGroup = this,
+                TargetType = typeof(TEntity),
                 HttpMethod = HttpMethod.Post.Method,
                 Handler = async (context) =>
                 {
@@ -99,7 +105,7 @@ namespace CFW.DynamicApi.Buiders
                     IsKey = x.IsKey(),
                     Name = x.Name,
                     ClrType = x.ClrType,
-                    IsRequired = x.IsNullable,
+                    IsRequired = !x.IsNullable,
                     PropertyType = PropertyType.Scalar
                 });
 

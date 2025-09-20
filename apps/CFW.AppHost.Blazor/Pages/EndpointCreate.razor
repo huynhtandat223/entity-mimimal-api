@@ -1,0 +1,426 @@
+﻿@page "/endpoint-form"
+@page "/endpoint-form/{Id:guid}"
+@using Radzen
+@using Radzen.Blazor
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject IApiClient ApiClient
+
+<RadzenTemplateForm Data="@request" Submit="@(EventCallback.Factory.Create<Request>(this, OnSubmit))"
+Class="rz-d-flex rz-flex-column" Style="height: 100%;">
+    <div Class="rz-flex-1" Style="overflow-y: auto;">
+        <RadzenStack>
+            <RadzenRow Gap="2rem" Class="rz-p-0 rz-p-lg-4">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack>
+                        <RadzenFieldset Text="Basic Information">
+                            <RadzenStack Gap="1rem">
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="Endpoint Path" Component="Path" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenTextBox @bind-Value="@request.Path" 
+                                        Placeholder="Enter endpoint path (e.g., /api/users)" 
+                                        Style="width: 100%;" 
+                                        Name="Path" />
+                                        <RadzenRequiredValidator Component="Path" Text="Path is required" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="HTTP Method" Component="Method" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenDropDown @bind-Value="@request.Method" 
+                                        Data="@httpMethods" 
+                                        TextProperty="Text" 
+                                        ValueProperty="Value"
+                                        Placeholder="Select HTTP Method"
+                                        Style="width: 100%;" 
+                                        Name="Method" />
+                                        <RadzenRequiredValidator Component="Method" Text="HTTP Method is required" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="Table Name" Component="TableName" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenTextBox @bind-Value="@request.TableName" 
+                                        Placeholder="Enter table name"
+                                        Style="width: 100%;" 
+                                        Name="TableName" />
+                                        <RadzenRequiredValidator Component="TableName" Text="Table name is required" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="Authentication" Component="IsAuthenticationRequired" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                            <RadzenCheckBox @bind-Value="@request.IsAuthenticationRequired" 
+                                            Change="@((bool value) => OnAuthenticationToggle(value))" 
+                                            Name="IsAuthenticationRequired" />
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                                                Authentication Required
+                                            </RadzenText>
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="Description" Component="Description" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenTextArea @bind-Value="@request.Description"
+                                        Placeholder="Enter endpoint description" 
+                                        Style="width: 100%;" 
+                                        Rows="3" 
+                                        Name="Description" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenStack>
+                        </RadzenFieldset>
+
+                        @if (request.IsAuthenticationRequired)
+                        {
+                            <RadzenFieldset Text="Authorization">
+                                <RadzenStack Gap="1rem">
+                                    <RadzenRow AlignItems="AlignItems.Center">
+                                        <RadzenColumn Size="12" SizeMD="4">
+                                            <RadzenLabel Text="Configure" Component="hasAuthorization" />
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="12" SizeMD="8">
+                                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" Class="rz-p-3 rz-bg-light rz-border rz-rounded">
+                                                <RadzenIcon Icon="security" Class="rz-text-primary" Style="font-size: 1.5rem;" />
+                                                <RadzenCheckBox @bind-Value="@hasAuthorization" 
+                                                Change="@((bool value) => OnAuthorizationToggle(value))" 
+                                                Text="Configure Authorization" 
+                                                Class="rz-font-weight-bold" 
+                                                Name="hasAuthorization" />
+                                            </RadzenStack>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+
+                                    @if (hasAuthorization && request.Authorization != null)
+                                    {
+                                        <RadzenRow AlignItems="AlignItems.Center">
+                                            <RadzenColumn Size="12" SizeMD="4">
+                                                <RadzenLabel Text="Roles" Component="Roles" />
+                                            </RadzenColumn>
+                                            <RadzenColumn Size="12" SizeMD="8">
+                                                <RadzenTextBox @bind-Value="@request.Authorization.Roles" 
+                                                Placeholder="Enter roles (comma-separated)" 
+                                                Style="width: 100%;" 
+                                                Name="Roles" />
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow AlignItems="AlignItems.Center">
+                                            <RadzenColumn Size="12" SizeMD="4">
+                                                <RadzenLabel Text="Permissions" Component="Permissions" />
+                                            </RadzenColumn>
+                                            <RadzenColumn Size="12" SizeMD="8">
+                                                <RadzenTextBox @bind-Value="@request.Authorization.Permissions" 
+                                                Placeholder="Enter permissions (comma-separated)" 
+                                                Style="width: 100%;" 
+                                                Name="Permissions" />
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow AlignItems="AlignItems.Center">
+                                            <RadzenColumn Size="12" SizeMD="4">
+                                                <RadzenLabel Text="Policies" Component="Policies" />
+                                            </RadzenColumn>
+                                            <RadzenColumn Size="12" SizeMD="8">
+                                                <RadzenTextBox @bind-Value="@request.Authorization.Policies" 
+                                                Placeholder="Enter policies (comma-separated)" 
+                                                Style="width: 100%;" 
+                                                Name="Policies" />
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                    }
+                                </RadzenStack>
+                            </RadzenFieldset>
+                        }
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack>
+                        <RadzenFieldset Text="Container Configuration">
+                            <RadzenStack Gap="1rem">
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="Route Prefix" Component="RoutePrefix" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenTextBox @bind-Value="@request.ContainerConfiguration.RoutePrefix" 
+                                        Placeholder="Enter route prefix (e.g., api/v1)" 
+                                        Style="width: 100%;" 
+                                        Name="RoutePrefix" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="Page Size" Component="DefaultPageSize" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenNumeric @bind-Value="@request.ContainerConfiguration.DefaultPageSize" 
+                                        Placeholder="Enter default page size" 
+                                        Style="width: 100%;"
+                                        Min="1"
+                                        Max="1000" 
+                                        Name="DefaultPageSize" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenStack>
+                        </RadzenFieldset>
+
+                        <RadzenFieldset Text="OData Support Options">
+                            <RadzenStack Gap="1rem">
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenLabel Text="Enable OData" Component="hasODataOptions" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" Class="rz-p-3 rz-bg-info-light rz-border rz-rounded">
+                                            <RadzenIcon Icon="data_object" Class="rz-text-info" Style="font-size: 1.5rem;" />
+                                            <RadzenCheckBox @bind-Value="@hasODataOptions"
+                                            Change="@((bool value) => OnODataOptionsToggle(value))"
+                                            Text="Enable OData Support" 
+                                            Class="rz-font-weight-bold" 
+                                            Name="hasODataOptions" />
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                @if (hasODataOptions && request.ODataOptions != null)
+                                {
+                                    <RadzenRow AlignItems="AlignItems.Center">
+                                        <RadzenColumn Size="12" SizeMD="4">
+                                            <RadzenLabel Text="Max Top" Component="MaxTop" />
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="12" SizeMD="8">
+                                            <RadzenNumeric @bind-Value="@request.ODataOptions.MaxTop"
+                                            Placeholder="Maximum top value" 
+                                            Style="width: 100%;" 
+                                            Min="1" 
+                                            Max="10000" 
+                                            Name="MaxTop" />
+                                        </RadzenColumn>
+                                    </RadzenRow>
+                                    <RadzenRow AlignItems="AlignItems.Center">
+                                        <RadzenColumn Size="12" SizeMD="4">
+                                            <RadzenLabel Text="Allow Filter" Component="AllowFilter" />
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="12" SizeMD="8">
+                                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                                <RadzenCheckBox @bind-Value="@request.ODataOptions.AllowFilter" Name="AllowFilter" />
+                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                                                    Allow Filter
+                                                </RadzenText>
+                                            </RadzenStack>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+                                    <RadzenRow AlignItems="AlignItems.Center">
+                                        <RadzenColumn Size="12" SizeMD="4">
+                                            <RadzenLabel Text="Allow Order By" Component="AllowOrderBy" />
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="12" SizeMD="8">
+                                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                                <RadzenCheckBox @bind-Value="@request.ODataOptions.AllowOrderBy" Name="AllowOrderBy" />
+                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                                                    Allow Order By
+                                                </RadzenText>
+                                            </RadzenStack>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+                                }
+                            </RadzenStack>
+                        </RadzenFieldset>
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="1rem" Class="rz-mt-8 rz-mb-4">
+                <RadzenButton ButtonType="ButtonType.Submit" Size="ButtonSize.Large" Icon="@(IsEditMode ? "save" : "add_circle")" Text="@(IsEditMode ? "Update Endpoint" : "Create Endpoint")" IsBusy="@isSubmitting" />
+                <RadzenButton ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Large" Icon="cancel" Text="Cancel" Click="@OnCancel" />
+            </RadzenStack>
+        </RadzenStack>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private Request request = new();
+    private bool hasAuthorization = false;
+    private bool hasODataOptions = false;
+    private bool isSubmitting = false;
+    private bool IsEditMode => Id.HasValue;
+
+    // Sample HTTP methods - replace with your actual HttpMethod enum values
+    private List<dynamic> httpMethods = new()
+{
+new { Text = "GET", Value = "GET" },
+new { Text = "POST", Value = "POST" },
+new { Text = "PUT", Value = "PUT" },
+new { Text = "DELETE", Value = "DELETE" },
+new { Text = "PATCH", Value = "PATCH" }
+};
+
+    protected override async Task OnInitializedAsync()
+    {
+        InitializeRequest();
+
+        if (IsEditMode && Id.HasValue)
+        {
+            await LoadRequest(Id.Value);
+        }
+    }
+
+    private void InitializeRequest()
+    {
+        request = new Request
+        {
+            Id = IsEditMode && Id.HasValue ? Id.Value : Guid.NewGuid(),
+            ContainerConfiguration = new ContainerConfigurationViewModel
+            {
+                Id = Guid.NewGuid()
+            }
+        };
+    }
+
+    private Task LoadRequest(Guid id)
+    {
+        try
+        {
+            // TODO: Replace with your actual service call
+            // request = await RequestService.GetByIdAsync(id);
+
+            // Set toggle states based on loaded data
+            hasAuthorization = request.Authorization != null;
+            hasODataOptions = request.ODataOptions != null;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to load request: {ex.Message}",
+                Duration = 4000
+            });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void OnAuthenticationToggle(bool value)
+    {
+        if (!value)
+        {
+            // If authentication is disabled, also disable authorization
+            hasAuthorization = false;
+            request.Authorization = null;
+        }
+    }
+
+    private void OnAuthorizationToggle(bool value)
+    {
+        hasAuthorization = value;
+        if (value)
+        {
+            request.Authorization = new EndpointAuthorization
+            {
+                Id = Guid.NewGuid()
+            };
+        }
+        else
+        {
+            request.Authorization = null;
+        }
+    }
+
+    private void OnODataOptionsToggle(bool value)
+    {
+        hasODataOptions = value;
+        if (value)
+        {
+            request.ODataOptions = new EndpointODataSupportOptions
+            {
+                Id = Guid.NewGuid(),
+                AllowFilter = true,
+                AllowOrderBy = true
+            };
+        }
+        else
+        {
+            request.ODataOptions = null;
+        }
+    }
+
+    private async Task OnSubmit(Request request)
+    {
+        isSubmitting = true;
+
+        try
+        {
+            if (IsEditMode)
+            {
+                // TODO: Replace with your actual service call
+                // await RequestService.UpdateAsync(request);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "Endpoint updated successfully!",
+                    Duration = 4000
+                });
+            }
+            else
+            {
+                try
+                {
+                    var response = await ApiClient.TableSourcesAsync(request);
+
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Success",
+                        Detail = "Endpoint created successfully!",
+                        Duration = 4000
+                    });
+                }
+                catch
+                {
+                    
+                    throw;
+                }
+            }
+
+            // TODO: Navigate to list page or close dialog
+            // NavigationManager.NavigateTo("/endpoints");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to {(IsEditMode ? "update" : "create")} endpoint: {ex.Message}",
+                Duration = 4000
+            });
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void OnCancel()
+    {
+        // TODO: Navigate back or close dialog
+        // NavigationManager.NavigateTo("/endpoints");
+    }
+}

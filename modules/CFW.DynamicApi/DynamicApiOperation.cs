@@ -18,6 +18,10 @@ public class DynamicApiOperation
 
     public string Route { get; set; } = "/";
 
+    internal Type? TargetType { get; set; }
+
+    public string? Name { get; set; }
+
     [Obsolete("Not lexible enough")]
     public Func<HttpContext, Task<object?>>? Handler { get; set; }
 
@@ -86,6 +90,10 @@ public class DynamicApiOperation
     }
 
     public IEnumerable<PropertyMetadata> AllowedProperties { get; set; } = Enumerable.Empty<PropertyMetadata>();
+
+    public bool AllowAllProperties { set; get; } = false;
+    public Type? RequestType { get; set; }
+    public Type? ResponseType { get; set; }
 }
 
 public class DynamicApiOperation<TKey> : DynamicApiOperation
@@ -125,17 +133,16 @@ public class DynamicApiOperation<TKey> : DynamicApiOperation
 
 public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
 {
-    private readonly Type _targetType;
-
     public ApiOperation(Type targetType)
     {
-        _targetType = targetType;
+        TargetType = targetType;
     }
 
     public override RouteHandlerBuilder MapApi(RouteGroupBuilder group)
     {
         var operation = this;
 
+#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
         return group.MapMethods(operation.Route ?? "/", [operation.HttpMethod]
             , async (HttpContext ctx, QueryRequest<TRequest> request) =>
         {
@@ -154,7 +161,7 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
             }
 
             // Execute the handler
-            var handler = ActivatorUtilities.CreateInstance(ctx.RequestServices, _targetType)
+            var handler = ActivatorUtilities.CreateInstance(ctx.RequestServices, TargetType)
             as IRequestHandler<TRequest, TResponse>;
             var requestContext = new RequestModel<TRequest>
             {
@@ -178,5 +185,6 @@ public class ApiOperation<TRequest, TResponse> : DynamicApiOperation
         .Accepts<TRequest>("application/json")
         .Produces(StatusCodes.Status400BadRequest)
         .WithMetadata(operation);
+#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
     }
 }

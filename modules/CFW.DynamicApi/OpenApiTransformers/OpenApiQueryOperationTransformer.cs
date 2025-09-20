@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace CFW.DynamicApi.OpenApiTransformers;
 
@@ -39,18 +40,63 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
 
         operation.Parameters ??= new List<OpenApiParameter>();
 
-        if (apiOperation.Route.IsNotNullOrNotWhiteSpace() && apiOperation.Route.Contains("{id}"))
+        if (apiOperation.Route.IsNotNullOrNotWhiteSpace())
         {
-            operation.Parameters.Add(new OpenApiParameter
+            // Use regex to find all {parameter} placeholders in the route
+            var routeParameters = Regex.Matches(apiOperation.Route, @"\{([^}]+)\}")
+                .Cast<Match>()
+                .Select(m => m.Groups[1].Value)
+                .Distinct();
+
+            foreach (var paramName in routeParameters)
             {
-                Name = "id",
-                In = ParameterLocation.Path,
-                Required = true,
-                Schema = new OpenApiSchema
+                operation.Parameters.Add(new OpenApiParameter
                 {
-                    Type = "string"
+                    Name = paramName,
+                    In = ParameterLocation.Path,
+                    Required = true,
+                    Description = $"The {paramName} parameter in the route",
+                    Schema = new OpenApiSchema
+                    {
+                        Type = "string",
+                        MinLength = 1
+                    }
+                });
+            }
+        }
+
+        if (apiOperation.ResponseType is not null && apiOperation.ResponseType == typeof(IQueryable))
+        {
+            operation.Responses["200"] = new OpenApiResponse
+            {
+                Description = "Successful response with OData query result",
+                Content = new Dictionary<string, OpenApiMediaType>
+                {
+                    ["application/json"] = new OpenApiMediaType
+                    {
+                        Schema = new OpenApiSchema
+                        {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema>
+                            {
+                                ["value"] = new OpenApiSchema
+                                {
+                                    Type = "array",
+                                    Items = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema>(),
+                                        Required = new HashSet<string>()
+                                    }
+                                },
+                                ["@odata.count"] = new OpenApiSchema { Type = "integer", Format = "int64", Nullable = true }
+                            }
+                        }
+                    }
                 }
-            });
+            };
+            operation.RequestBody = null; // Ensure no request body for GET
+            return Task.CompletedTask;
         }
 
         var jsonOptions = context.ApplicationServices.GetService<IOptions<JsonOptions>>();
@@ -74,7 +120,11 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema>
             {
-                ["value"] = entitySchema,
+                ["value"] = new OpenApiSchema
+                {
+                    Type = "array",
+                    Items = entitySchema
+                },
                 ["@odata.count"] = new OpenApiSchema { Type = "integer", Format = "int64", Nullable = true }
             }
         };
@@ -91,6 +141,7 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
                     ["application/json"] = new OpenApiMediaType { Schema = responseSchema }
                 }
             };
+            operation.RequestBody = null; // Ensure no request body for GET
         }
         else if (context.Description.HttpMethod == HttpMethods.Post
             || context.Description.HttpMethod == HttpMethods.Put
@@ -155,25 +206,34 @@ public class OpenApiQueryOperationTransformer : IOpenApiOperationTransformer
         switch (prop.PropertyType)
         {
             case PropertyType.Scalar:
-                if (actualType.IsEnum)
-                {
-                    var enumValues = Enum.GetValues(actualType).Cast<object>();
-                    var enumUnderlyingType = Enum.GetUnderlyingType(actualType);
+                //if (actualType.IsEnum)
+                //{
+                //    var enumValues = Enum.GetValues(actualType).Cast<object>();
+                //    var enumUnderlyingType = Enum.GetUnderlyingType(actualType);
 
-                    if (enumUnderlyingType == typeof(int))
-                    {
-                        schema.Type = "integer";
-                        schema.Enum = enumValues
-                            .Select(val => (IOpenApiAny)new Microsoft.OpenApi.Any.OpenApiInteger(Convert.ToInt32(val)))
-                            .ToList();
-                    }
-                    else
-                    {
-                        schema.Type = "string";
-                        schema.Enum = enumValues
-                            .Select(val => (IOpenApiAny)new Microsoft.OpenApi.Any.OpenApiString(val.ToString()))
-                            .ToList();
-                    }
+                //    if (enumUnderlyingType == typeof(int))
+                //    {
+                //        schema.Type = "integer";
+                //        schema.Enum = enumValues
+                //            .Select(val => (IOpenApiAny)new OpenApiInteger(Convert.ToInt32(val)))
+                //            .ToList();
+                //    }
+                //    else
+                //    {
+                //        schema.Type = "string";
+                //        schema.Enum = enumValues
+                //            .Select(val => (IOpenApiAny)new OpenApiString(val.ToString()))
+                //            .ToList();
+                //    }
+                //}
+                if (actualType.IsEnum || (Nullable.GetUnderlyingType(actualType)?.IsEnum == true))
+                {
+                    var enumType = Nullable.GetUnderlyingType(actualType) ?? actualType;
+                    schema.Type = "string";
+                    schema.Enum = Enum.GetNames(enumType)
+                        .Select(name => (IOpenApiAny)new Microsoft.OpenApi.Any.OpenApiString(name))
+                        .ToList();
+                    schema.Nullable = Nullable.GetUnderlyingType(actualType) != null;
                 }
                 else if (_clrToOpenApiMap.TryGetValue(actualType, out var scalar))
                 {

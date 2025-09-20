@@ -1,0 +1,362 @@
+﻿@page "/endpoints"
+@using Radzen
+@using Radzen.Blazor
+@using System.Linq
+@using Microsoft.AspNetCore.Components.Web
+@inject IApiClient ApiClient
+@inject DialogService DialogService
+
+<div class="endpoints-page-container full-width">
+
+    @* Main Content *@
+    <div class="main-content">
+        <div class="data-grid-container">
+            <div class="grid-header">
+                <div class="grid-actions">
+                    <RadzenButton Text="Toggle Id visibility" Click=@(() => IDVisible = !IDVisible)
+                        ButtonStyle="ButtonStyle.Light" Icon="visibility" />
+                    <RadzenButton Text="Create Endpoint" Click="@AddEndpoint" ButtonStyle="ButtonStyle.Primary"
+                        Icon="add" />
+                </div>
+                
+                <div class="grid-filters">
+                    <RadzenTextBox @bind-Value="filterModel.SearchTerm" 
+                        Placeholder="Search by path or description..." 
+                        Change="@(() => OnFilterChanged())"
+                        Style="width: 300px; margin-right: 10px;" />
+                    
+                    <RadzenDropDown @bind-Value="filterModel.Method" 
+                        Data="@methods" 
+                        Change="@(() => OnFilterChanged())"
+                        Placeholder="Filter by method..."
+                        Style="width: 150px; margin-right: 10px;" />
+                    
+                    <RadzenDropDown @bind-Value="filterModel.IsAuthenticationRequired" 
+                        Data="@authOptions" 
+                        Change="@(() => OnFilterChanged())"
+                        Placeholder="Filter by auth..."
+                        Style="width: 150px; margin-right: 10px;" />
+                    
+                    <RadzenButton Text="Clear Filters" Click="@ClearFilters" 
+                        ButtonStyle="ButtonStyle.Light" Icon="clear" />
+                </div>
+            </div>
+
+            <RadzenDataGrid AllowColumnPicking=true AllowFiltering=true AllowPaging=true AllowSorting=true
+                Data="@endpoints" TItem="Value6" PageSize="10" LoadData="@((LoadDataArgs args) => LoadEndpointsAsync(args))" Count="@totalCount"
+                class="custom-data-grid">
+                <EmptyTemplate>
+                    <div class="empty-state">
+                        <RadzenIcon Icon="http" Style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;" />
+                        <h4>No endpoints found</h4>
+                        <p>Create your first API endpoint to get started.</p>
+                    </div>
+                </EmptyTemplate>
+                <Columns>
+                    <RadzenDataGridColumn Visible="@IDVisible" Property="@nameof(Value6.Id)" Title="ID" Width="80px"
+                        TextAlign="TextAlign.Center" Frozen="true" />
+                    <RadzenDataGridColumn TItem="Value6" Property="Path" Title="PATH" Width="200px" />
+                    <RadzenDataGridColumn TItem="Value6" Property="Description" Title="DESCRIPTION" Width="250px" />
+                    <RadzenDataGridColumn TItem="Value6" Title="METHOD" Width="100px">
+                        <Template Context="endpoint">
+                            <span>@(endpoint.Method.ToString() ?? "Unknown")</span>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="Value6" Property="IsAuthenticationRequired" Title="AUTH REQUIRED"
+                        Width="120px">
+                        <Template Context="endpoint">
+                            <span>@(endpoint.IsAuthenticationRequired == true ? "Yes" : "No")</span>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="Value6" Property="AuthorizationId" Title="AUTHORIZATION ID"
+                        Width="150px" />
+                    <RadzenDataGridColumn TItem="Value6" Property="ContainerConfigurationId" Title="CONTAINER ID"
+                        Width="150px" />
+                    <RadzenDataGridColumn TItem="Value6" Property="ODataOptionsId" Title="ODATA OPTIONS ID"
+                        Width="150px" />
+                    <RadzenDataGridColumn TItem="Value6" Property="RuntimeEntityDefinitionId" Title="ENTITY ID"
+                        Width="150px" />
+                    <RadzenDataGridColumn TItem="Value6" Context="endpoint" Title="ACTIONS" Width="100px">
+                        <Template Context="endpoint">
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="visibility" Size="ButtonSize.Small" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="more_vert" Size="ButtonSize.Small" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+</div>
+
+<style>
+    .endpoints-page-container {
+        padding: 0;
+        max-width: 100%;
+        margin: 0;
+        background: transparent;
+        min-height: auto;
+        width: 100%;
+    }
+
+    .endpoints-page-container.full-width {
+        padding: 0;
+        background: var(--background-color);
+        min-height: calc(100vh - var(--header-height));
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Override MainLayout constraints */
+    .app-main.full-width .main-content {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Enhanced width for data grids on large screens */
+        @@media(min - width: 1600px) {
+            .app-main.full-width .main-content {
+                max-width: 100% !important;
+            }
+        }
+
+        @@media(min - width: 2000px) {
+                .app-main.full-width .main-content {
+                    max-width: 100% !important;
+                }
+            }
+
+            .breadcrumb-container {
+                padding: 1rem 0 !important;
+                margin: 0 !important;
+            }
+
+
+            .main-content {
+                background: transparent;
+                border-radius: 0;
+                box-shadow: none;
+                overflow: visible;
+                border: none;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .data-grid-container {
+                background: var(--surface-color);
+                border-radius: 0;
+                box-shadow: none;
+                overflow: hidden;
+                border: none;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .grid-header {
+                padding: 1.5rem;
+                border-bottom: 1px solid var(--border-light);
+                margin-bottom: 0;
+            }
+
+    .grid-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .grid-filters {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+            .custom-data-grid {
+                border: none !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .custom-data-grid .rz-datagrid {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .custom-data-grid .rz-datagrid-table {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .custom-data-grid .rz-datagrid-content {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .custom-data-grid .rz-datagrid-header {
+                background: var(--surface-variant);
+                border-bottom: 1px solid var(--border-light);
+            }
+
+            .custom-data-grid .rz-datagrid-row:hover {
+                background-color: var(--surface-variant);
+            }
+
+            .empty-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 3rem 2rem;
+                text-align: center;
+                color: var(--text-secondary);
+            }
+
+            .empty-state h4 {
+                margin: 0.5rem 0;
+                color: var(--text-primary);
+                font-size: 1.3rem;
+            }
+
+            .empty-state p {
+                font-size: 1rem;
+                line-height: 1.5;
+                max-width: 300px;
+            }
+
+            /* Responsive Design */
+            @@media(max - width: 768px) {
+                    .endpoints-page-container.full-width {
+                        padding: 0;
+                    }
+
+                    .grid-header {
+                        padding: 1rem;
+                    }
+
+                    .grid-actions {
+                        flex-direction: column;
+                        align-items: stretch;
+                        gap: 0.5rem;
+                    }
+                }
+
+                @@media(max - width: 480px) {
+        .grid-header {
+            padding: 0.75rem;
+        }
+    }
+</style>
+
+@code {
+
+    private IEnumerable<Value6> endpoints = new List<Value6>();
+    private int totalCount;
+    private EndpointFilter filterModel = new();
+    private List<string> methods = new() { "GET", "POST", "PUT", "DELETE" };
+    private List<object> authOptions = new() 
+    { 
+        new { Text = "All", Value = (bool?)null },
+        new { Text = "Required", Value = (bool?)true },
+        new { Text = "Not Required", Value = (bool?)false }
+    };
+    bool IDVisible = false;
+
+    public class EndpointFilter
+    {
+        public string SearchTerm { get; set; } = "";
+        public string? Method { get; set; }
+        public bool? IsAuthenticationRequired { get; set; }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEndpointsAsync(new LoadDataArgs());
+    }
+
+    private async Task LoadEndpointsAsync(LoadDataArgs args)
+    {
+        try
+        {
+            // Build OData filter string
+            var filterParts = new List<string>();
+            
+            if (!string.IsNullOrEmpty(filterModel.SearchTerm))
+            {
+                filterParts.Add($"(contains(tolower(Path), tolower('{filterModel.SearchTerm}')) or contains(tolower(Description), tolower('{filterModel.SearchTerm}')))");
+            }
+
+            if (!string.IsNullOrEmpty(filterModel.Method))
+            {
+                // Convert method string to enum value for OData filter
+                var methodValue = filterModel.Method.ToUpper() switch
+                {
+                    "GET" => "0",
+                    "POST" => "1", 
+                    "PUT" => "2",
+                    "DELETE" => "3",
+                    _ => filterModel.Method
+                };
+                filterParts.Add($"Method eq {methodValue}");
+            }
+
+            if (filterModel.IsAuthenticationRequired.HasValue)
+            {
+                filterParts.Add($"IsAuthenticationRequired eq {filterModel.IsAuthenticationRequired.Value.ToString().ToLower()}");
+            }
+
+            var filter = filterParts.Any() ? string.Join(" and ", filterParts) : null;
+
+            // Call API with OData parameters
+            var endpointsResp = await ApiClient.EndpointsAsync(
+                filter: filter,
+                top: args.Top,
+                skip: args.Skip,
+                orderby: args.OrderBy,
+                count: true
+            );
+
+            endpoints = endpointsResp.Value ?? new List<Value6>();
+            totalCount = (int)(endpointsResp.OdataCount ?? 0);
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            // Handle error if needed
+            Console.WriteLine($"Error loading endpoints: {ex.Message}");
+            endpoints = new List<Value6>();
+            totalCount = 0;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnFilterChanged()
+    {
+        await LoadEndpointsAsync(new LoadDataArgs());
+    }
+
+    private async Task ClearFilters()
+    {
+        filterModel = new EndpointFilter();
+        await LoadEndpointsAsync(new LoadDataArgs());
+    }
+
+    private async Task AddEndpoint()
+    {
+        var result = await DialogService.OpenAsync<EndpointCreate>("Create Endpoint",
+        new Dictionary<string, object>(),
+        new DialogOptions()
+        {
+            Width = "80vw",
+            Height = "80vh",
+            Resizable = true,
+            Draggable = true,
+            CloseDialogOnOverlayClick = false
+        });
+    }
+}

@@ -1,0 +1,55 @@
+﻿@page "/login"
+@using CFW.AppHost.Blazor.ApiClient
+@using CFW.AppHost.Blazor.Authentications
+@using CFW.AppHost.Blazor.Components.Shared
+@using CFW.Core.Utils
+@using Microsoft.AspNetCore.Components.Authorization
+@layout AnonymousLayout
+@inject IApiClient ApiClient
+@inject CustomAuthStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<PageTitle>Login</PageTitle>
+
+<RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px;">
+    <RadzenTemplateForm Data=@("LoginWithDefaultValues")>
+        <RadzenLogin AllowRegister="true" AllowResetPassword="true" AllowRememberMe="true"
+        Login=@(args => OnLogin(args))
+        ResetPassword=@(args => OnResetPassword(args, "Login with default values"))
+        Register=@(args => OnRegister("Login with default values")) />
+    </RadzenTemplateForm>
+</RadzenCard>
+
+
+@code {
+    async Task OnLogin(LoginArgs args)
+    {
+        var accessTokenResponse = await ApiClient.LoginAsync(new LoginRequest
+        {
+            Email = args.Username,
+            Password = args.Password,
+        });
+
+        if (accessTokenResponse.AccessToken.IsNullOrEmpty())
+            return;
+
+        await AuthStateProvider.MarkUserAsAuthenticated(accessTokenResponse.AccessToken
+            , accessTokenResponse.ExpiresIn, accessTokenResponse.RefreshToken);
+
+        var uri = new Uri(Nav.Uri);
+        var q = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var returnUrl = q["returnUrl"] ?? "/";
+
+        Nav.NavigateTo(returnUrl, forceLoad: true);
+    }
+
+    void OnRegister(string name)
+    {
+        //console.Log($"{name} -> Register");
+    }
+
+    void OnResetPassword(string value, string name)
+    {
+        //console.Log($"{name} -> ResetPassword for user: {value}");
+    }
+}

@@ -7,8 +7,6 @@ using System.Text.Json.Serialization;
 
 namespace CFW.DynamicApi.Buiders;
 
-
-
 [Obsolete("Is need to refactor or simplify ????")]
 public class DynamicEntityGroupBuilder
 {
@@ -56,12 +54,6 @@ public class DynamicEntityGroupBuilder
     }
 
     public IEnumerable<PropertyMetadata>? Properties { set; get; }
-
-    public DynamicEntityGroupBuilder WithRouteName(string routeName)
-    {
-        RouteName = routeName;
-        return this;
-    }
 }
 
 [Obsolete("Is need to refactor or simplify ????")]

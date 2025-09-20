@@ -17,12 +17,15 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> : DynamicEntit
     {
     }
 
-    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddUpdatingApi(Action<DynamicApiOperation>? operationConfig = null)
+    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddUpdatingApi(Action<DynamicApiOperation>? operationConfig = null
+        , string name = null)
     {
         var result = new DynamicApiOperation<TKey>
         {
             Route = $"/{{key}}",
             EntityGroup = this,
+            TargetType = typeof(TEntity),
+            Name = name ?? $"Update{typeof(TEntity).Name}",
             HttpMethod = HttpMethod.Put.Method,
             ModelHandler = async (context, key) =>
             {
@@ -66,12 +69,15 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> : DynamicEntit
     /// </summary>
     /// <param name="operationConfig"></param>
     /// <returns></returns>
-    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddPartialUpdatingApi(Action<DynamicApiOperation>? operationConfig = null)
+    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddPartialUpdatingApi(Action<DynamicApiOperation>? operationConfig = null
+        , string name = null)
     {
         var result = new DynamicApiOperation<TKey>
         {
             Route = $"/{{key}}",
             EntityGroup = this,
+            TargetType = typeof(TEntity),
+            Name = name ?? $"PartialUpdate{typeof(TEntity).Name}",
             HttpMethod = HttpMethod.Patch.Method,
             ModelHandler = async (context, key) =>
             {
@@ -115,13 +121,16 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> : DynamicEntit
         return this;
     }
 
-    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddDeleteApi(Action<DynamicApiOperation>? operationConfig = null)
+    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddDeleteApi(Action<DynamicApiOperation>? operationConfig = null
+        , string name = null)
     {
         var result = new DynamicApiOperation<TKey>
         {
             Route = $"/{{key}}",
             EntityGroup = this,
+            TargetType = typeof(TEntity),
             HttpMethod = HttpMethod.Delete.Method,
+            Name = name ?? $"Delete{typeof(TEntity).Name}",
             ModelHandler = async (context, key) =>
             {
                 var db = context.RequestServices.GetRequiredService<TDbContext>();
@@ -150,12 +159,15 @@ public class DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> : DynamicEntit
         return this;
     }
 
-    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddGetSingleApi(Action<DynamicApiOperation>? operationConfig = null)
+    public DynamicEntityGroupBuilder<TEntity, TDbContext, TKey> AddGetSingleApi(Action<DynamicApiOperation>? operationConfig = null
+        , string name = null)
     {
         var result = new DynamicApiOperation<TKey>
         {
             Route = $"/{{key}}",
             EntityGroup = this,
+            TargetType = typeof(TEntity),
+            Name = name ?? $"Get{typeof(TEntity).Name}",
             HttpMethod = HttpMethod.Get.Method,
             ModelHandler = async (context, key) =>
             {

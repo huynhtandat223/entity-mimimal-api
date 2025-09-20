@@ -1,9 +1,9 @@
 ﻿using CFW.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 
-namespace CFW.AppHost.Features.Endpoints.Models;
+namespace CFW.AppHost.Features.Databases.Models;
 
-public class RuntimeEntityDefinition : IEntity<Guid>
+public class TableDefinition : IEntity<Guid>
 {
     public Guid Id { set; get; }
 
@@ -13,15 +13,15 @@ public class RuntimeEntityDefinition : IEntity<Guid>
     [Required]
     public string Name { set; get; } = string.Empty;
 
-    public IEnumerable<RuntimeEntityPropertyDefinition> Properties { set; get; }
-        = new List<RuntimeEntityPropertyDefinition>();
+    public IEnumerable<ColumnDefinition> Properties { set; get; }
+        = new List<ColumnDefinition>();
 
-    public IEnumerable<RuntimeEntityRelationshipDefinition> Relationships { set; get; }
-        = new List<RuntimeEntityRelationshipDefinition>();
+    public IEnumerable<RelationshipDefinition> Relationships { set; get; }
+        = new List<RelationshipDefinition>();
 }
 
 
-public class RuntimeEntityPropertyDefinition : IEntity<Guid>
+public class ColumnDefinition : IEntity<Guid>
 {
     public Guid Id { set; get; }
 
@@ -39,7 +39,7 @@ public class RuntimeEntityPropertyDefinition : IEntity<Guid>
     public bool IsNullable { set; get; }
 }
 
-public class RuntimeEntityRelationshipDefinition : IEntity<Guid>
+public class RelationshipDefinition : IEntity<Guid>
 {
     public Guid Id { set; get; }
 

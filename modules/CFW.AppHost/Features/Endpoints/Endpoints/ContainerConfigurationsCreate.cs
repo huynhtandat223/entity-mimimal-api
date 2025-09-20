@@ -1,24 +1,24 @@
-﻿using CFW.AppHost.Features.Core;
-using CFW.DynamicApi;
+﻿//using CFW.AppHost.Features.Core;
+//using CFW.DynamicApi;
 
-namespace CFW.AppHost.Features.Endpoints.Endpoints;
+//namespace CFW.AppHost.Features.Endpoints.Endpoints;
 
-[ApiOperation("endpoints", RouteName = "container-configurations")]
-public class ContainerConfigurationsCreate : IRequestHandler<ContainerConfiguration, Models.ContainerConfiguration>
-{
-    public async Task<IResult<Models.ContainerConfiguration>> Handle(RequestModel<ContainerConfiguration> request
-        , CancellationToken cancellationToken)
-    {
-        var entity = new Models.ContainerConfiguration
-        {
-            RoutePrefix = request.Model.RoutePrefix,
-            DefaultPageSize = request.Model.DefaultPageSize
-        };
+//[ApiOperation("endpoints", RouteName = "container-configurations")]
+//public class ContainerConfigurationsCreate : IRequestHandler<ContainerConfiguration, Models.ContainerConfiguration>
+//{
+//    public async Task<IResult<Models.ContainerConfiguration>> Handle(RequestModel<ContainerConfiguration> request
+//        , CancellationToken cancellationToken)
+//    {
+//        var entity = new Models.ContainerConfiguration
+//        {
+//            RoutePrefix = request.Model.RoutePrefix,
+//            DefaultPageSize = request.Model.DefaultPageSize
+//        };
 
-        var db = request.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Set<Models.ContainerConfiguration>().Add(entity);
-        await db.SaveChangesAsync();
+//        var db = request.ServiceProvider.GetRequiredService<AppDbContext>();
+//        db.Set<Models.ContainerConfiguration>().Add(entity);
+//        await db.SaveChangesAsync();
 
-        return entity.Created();
-    }
-}
+//        return entity.Created();
+//    }
+//}

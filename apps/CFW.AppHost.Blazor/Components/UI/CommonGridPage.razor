@@ -1,0 +1,59 @@
+﻿@typeparam TItem
+@using System.Linq.Dynamic.Core
+@using CFW.AppHost.Blazor.ApiClient
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject TooltipService TooltipService
+@inject ContextMenuService ContextMenuService
+@inject IApiClient ApiClient
+
+<RadzenDataGrid @ref="grid" @bind-Value=@selectedEmployees SelectionMode="DataGridSelectionMode.Multiple" KeyProperty="Id" IsLoading="@isLoading" Count="@count" Data="@employees"
+                LoadData="@LoadData" FilterPopupRenderMode="PopupRenderMode.OnDemand" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                FilterMode="FilterMode.Advanced" AllowSorting="true" AllowFiltering="true" AllowPaging="true" PageSize="4"
+                PagerHorizontalAlign="HorizontalAlign.Center" ColumnWidth="200px">
+    <Columns>
+        @foreach (var column in Columns)
+        {
+            <RadzenDataGridColumn @key=@column.Key Title="@column.Key" Type="column.Value"
+                                  Property="@PropertyAccess.GetDynamicPropertyExpression(column.Key, column.Value)">
+                <Template>
+                    @PropertyAccess.GetValue(context, column.Key)
+                </Template>
+            </RadzenDataGridColumn>
+        }
+    </Columns>
+    <LoadingTemplate>
+        <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </LoadingTemplate>
+</RadzenDataGrid>
+
+@code {
+    bool isLoading;
+    int count;
+    ODataEnumerable<TItem> employees;
+    IList<TItem> selectedEmployees;
+    RadzenDataGrid<TItem> grid;
+
+    List<string> titles = new List<string> { "Sales Representative", "Vice President, Sales", "Sales Manager", "Inside Sales Coordinator" };
+    IEnumerable<string> selectedTitles;
+
+    [Parameter]
+    public Func<LoadDataArgs, Task<(IEnumerable<TItem> Value, long? Count)>> LoadFunc { set; get; }
+
+    [Parameter]
+    public IDictionary<string, Type> Columns { get; set; }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+
+        var result = await LoadFunc(args);
+        // Update the Data property
+        employees = result.Value.AsODataEnumerable();
+        // Update the count
+        count = (int)(result.Count ?? 0);
+
+        isLoading = false;
+    }
+}
+

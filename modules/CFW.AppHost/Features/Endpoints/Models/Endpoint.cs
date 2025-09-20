@@ -1,4 +1,5 @@
-﻿using CFW.Core.Entities;
+﻿using CFW.AppHost.Infrastructures.DbContextExtensions.Models.Runtimes;
+using CFW.Core.Entities;
 
 namespace CFW.AppHost.Features.Endpoints.Models;
 
@@ -16,11 +17,16 @@ public class Endpoint : IEntity<Guid>
 
     public EndpointAuthorization? Authorization { set; get; }
 
+    public Guid? AuthorizationId { set; get; }
+
     public EndpointODataSupportOptions? ODataOptions { set; get; }
+    public Guid? ODataOptionsId { set; get; }
 
     public RuntimeEntityDefinition? RuntimeEntityDefinition { set; get; }
+    public Guid? RuntimeEntityDefinitionId { set; get; }
 
     public ContainerConfiguration ContainerConfiguration { set; get; } = default!;
+    public Guid ContainerConfigurationId { set; get; }
 }
 
 public enum HttpMethod

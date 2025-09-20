@@ -1,0 +1,209 @@
+﻿@using CFW.AppHost.Blazor.Authentications
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
+
+<AuthorizeView>
+    <Authorized>
+        <div class="app-layout @(sidebarExpanded ? "" : "sidebar-collapsed")">
+            <!-- Modern Header -->
+            <header class="app-header">
+                <div class="header-content">
+                    <!-- Left Section: Logo + Toggle -->
+                    <div class="header-left">
+                        <button class="sidebar-toggle" @onclick="@ToggleSidebar">
+                            <RadzenIcon Icon="@(sidebarExpanded ? "menu_open" : "menu")" />
+                        </button>
+                        <div class="app-logo">
+                            <RadzenIcon Icon="dashboard" class="logo-icon" />
+                            <span class="logo-text">CFW Admin</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Section: User Menu -->
+                    <div class="header-right">
+                        <div class="user-profile">
+                            <RadzenProfileMenu Click="@OnLogoutClick" class="user-menu">
+                                <Template>
+                                    <div class="user-avatar">
+                                        <RadzenIcon Icon="person" />
+                                    </div>
+                                </Template>
+                                <ChildContent>
+                                    <RadzenProfileMenuItem Text="Profile" Icon="person" />
+                                    <RadzenProfileMenuItem Text="Settings" Icon="settings" />
+                                    <hr class="menu-divider" />
+                                    <RadzenProfileMenuItem Text="Logout" Icon="logout" Value="logOutMenu" />
+                                </ChildContent>
+                            </RadzenProfileMenu>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Modern Sidebar -->
+            <aside class="app-sidebar @(sidebarExpanded ? "expanded" : "collapsed")">
+                <div class="sidebar-content">
+                    <nav class="sidebar-nav">
+                        <div class="nav-section">
+                            <div class="nav-section-title">
+                                <RadzenIcon Icon="code" />
+                                <span>Development</span>
+                            </div>
+                            <ul class="nav-menu">
+                                <li class="nav-item">
+                                    <a href="/endpoints" class="nav-link @(IsActivePage("/endpoints") ? "active" : "")">
+                                        <RadzenIcon Icon="http" />
+                                        <span>Endpoints</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/databases/tables"
+                                        class="nav-link @(IsActivePage("/databases/tables") ? "active" : "")">
+                                        <RadzenIcon Icon="table_chart" />
+                                        <span>Database Tables</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="nav-section">
+                            <div class="nav-section-title">
+                                <RadzenIcon Icon="business" />
+                                <span>Management</span>
+                            </div>
+                            <ul class="nav-menu">
+                                <li class="nav-item">
+                                    <a href="/tenants" class="nav-link @(IsActivePage("/tenants") ? "active" : "")">
+                                        <RadzenIcon Icon="domain" />
+                                        <span>Tenants</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="app-main @(IsFullWidthPage() ? "full-width" : "")">
+                @if (IsFullWidthPage())
+                {
+                    <div class="breadcrumb-container">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <RadzenIcon Icon="home" class="breadcrumb-icon" />
+                                <a href="/">Home</a>
+                            </li>
+                            @if (GetBreadcrumbItems().Any())
+                            {
+                                @foreach (var item in GetBreadcrumbItems())
+                                {
+                                    <li class="breadcrumb-item @(item.IsActive ? "active" : "")">
+                                        @if (!string.IsNullOrEmpty(item.Icon))
+                                        {
+                                            <RadzenIcon Icon="@item.Icon" class="breadcrumb-icon" />
+                                        }
+                                        @if (item.IsActive)
+                                        {
+                                            @item.Text
+                                        }
+                                        else
+                                        {
+                                            <a href="@item.Url">@item.Text</a>
+                                        }
+                                    </li>
+                                }
+                            }
+                        </ol>
+                    </div>
+                }
+                <div class="main-content">
+                    @Body
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="app-footer">
+                <div class="footer-content">
+                    <span>&copy; 2024 CFW Admin Panel. All rights reserved.</span>
+                    <div class="footer-links">
+                        <a href="#">Help</a>
+                        <a href="#">Support</a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    bool sidebarExpanded = true;
+    bool multiple = true;
+
+    private void ToggleSidebar()
+    {
+        sidebarExpanded = !sidebarExpanded;
+        StateHasChanged();
+    }
+
+    private bool IsActivePage(string path)
+    {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        return currentPath.StartsWith(path.TrimStart('/'), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsFullWidthPage()
+    {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        return currentPath.Contains("/databases/tables") ||
+        currentPath.Contains("/endpoints") ||
+        currentPath.Contains("/tenants");
+    }
+
+    private List<BreadcrumbItem> GetBreadcrumbItems()
+    {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var items = new List<BreadcrumbItem>();
+
+        if (currentPath.Contains("/databases/tables"))
+        {
+            items.Add(new BreadcrumbItem { Text = "Development", Icon = "code", Url = "#" });
+            items.Add(new BreadcrumbItem { Text = "Database Tables", Icon = "table_chart", IsActive = true });
+        }
+        else if (currentPath.Contains("/endpoints"))
+        {
+            items.Add(new BreadcrumbItem { Text = "Development", Icon = "code", Url = "#" });
+            items.Add(new BreadcrumbItem { Text = "Endpoints", Icon = "http", IsActive = true });
+        }
+        else if (currentPath.Contains("/tenants"))
+        {
+            items.Add(new BreadcrumbItem { Text = "Management", Icon = "business", Url = "#" });
+            items.Add(new BreadcrumbItem { Text = "Tenants", Icon = "domain", IsActive = true });
+        }
+
+        return items;
+    }
+
+    async Task OnLogoutClick(Radzen.Blazor.RadzenProfileMenuItem menuItem)
+    {
+        if (menuItem.Value == "logOutMenu")
+        {
+            await AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+    }
+
+    public class BreadcrumbItem
+    {
+        public string Text { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = false;
+    }
+}

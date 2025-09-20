@@ -1,4 +1,5 @@
-﻿using CFW.Core.Utils;
+﻿using CFW.Core.Results;
+using CFW.Core.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.OData;
@@ -9,8 +10,47 @@ using Microsoft.Extensions.Options;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
 using System.Collections;
+using IResult = CFW.Core.Results.IResult;
 
 namespace CFW.DynamicApi.Interceptors.OData;
+
+public class ODataFeatureInterceptor : IOperationInterceptor
+{
+    private readonly IServiceProvider _serviceProvider;
+    public ODataFeatureInterceptor(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public async Task<object?> OnExecutedAsync(HttpContext httpContext, DynamicApiOperation operation, object? result)
+    {
+        var responseObj = result;
+        if (responseObj is IResult r && responseObj.GetType().IsGenericType)
+        {
+            responseObj = r.GetPropertyValue(nameof(IResult<ODataFeatureInterceptor>.Data));
+        }
+
+        if (responseObj is null)
+            return result;
+
+        if (responseObj is not IEnumerable enumerable)
+            return result;
+
+        var responseObjType = responseObj.GetType();
+        if (!responseObjType.IsGenericType)
+            return result;
+
+        var args = responseObjType.GetGenericArguments();
+        if (args.Length != 1)
+            return result;
+
+        var entityType = responseObjType.GetGenericArguments()[0];
+        var interceptorType = typeof(ODataFeatureInterceptor<>).MakeGenericType(entityType);
+
+        var interceptor = (IOperationInterceptor)_serviceProvider.GetRequiredService(interceptorType);
+        return await interceptor.OnExecutedAsync(httpContext, operation, responseObj);
+    }
+}
 
 public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEntity : class
 {
@@ -59,6 +99,7 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
         var allowedPropDict = operation.AllowedProperties
             .Where(x => x.PropertyType == PropertyType.Scalar)
             .ToDictionary(x => x.Name, x => x.Name, StringComparer.OrdinalIgnoreCase);
+        var allowAllProps = operation.AllowAllProperties;
 
         List<string> selectedProps;
 
@@ -68,15 +109,19 @@ public class ODataFeatureInterceptor<TEntity> : IOperationInterceptor where TEnt
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(p => p.Trim())
                 .ToList();
+            selectedProps = requestedProps;
 
-            selectedProps = requestedProps
+            if (!allowAllProps)
+            {
+                selectedProps = requestedProps
                 .Where(p => allowedPropDict.ContainsKey(p))
                 .Select(p => allowedPropDict[p])
                 .ToList();
 
-            // fallback if nothing valid selected
-            if (selectedProps.Count == 0)
-                selectedProps = allowedPropDict.Values.ToList();
+                // fallback if nothing valid selected
+                if (selectedProps.Count == 0)
+                    selectedProps = allowedPropDict.Values.ToList();
+            }
         }
         else
         {

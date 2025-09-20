@@ -14,11 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Features\Endpoints\Services\RuntimeOpenApiQueryOperationTransformer.cs" />
-    <Compile Include="Features\Endpoints\Services\RuntimeDbContext.cs" />
-    <Compile Include="Features\Endpoints\Services\RuntimeDbMigrator.cs" />
     <Compile Include="Features\Endpoints\Services\RuntimeEndpointRegister.cs" />
-    <Compile Include="Features\Endpoints\Services\RuntimeTypeRegistry.cs" />
+    <Compile Include="Features\Endpoints\Services\RuntimeOpenApiQueryOperationTransformer.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,10 +27,10 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	  </PackageReference>
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
+		<PrivateAssets>all</PrivateAssets>
+		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
     <PackageReference Include="Microsoft.Playwright" Version="1.52.0" />
     <PackageReference Include="Refit" Version="8.0.0" />
     <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0" />

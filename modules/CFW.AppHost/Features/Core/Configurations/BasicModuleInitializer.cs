@@ -20,7 +20,7 @@ public class BasicModuleInitializer : IModuleInitializer
             options.AddPolicy("AllowFrontend", policy =>
             {
                 policy
-                    .WithOrigins("http://localhost:3000") // 👈 your frontend URL
+                    .WithOrigins("http://localhost:3000", "http://localhost:3001", "https://localhost:3002") // 👈 your frontend URL
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials(); // if using cookies or auth headers

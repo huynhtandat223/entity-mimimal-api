@@ -2,6 +2,7 @@
 using CFW.Core.Dependencies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Sqlite.Design.Internal;
 using Microsoft.EntityFrameworkCore.SqlServer.Design.Internal;
 
 namespace CFW.AppHost.Infrastructures.DbContextExtensions.Services;
@@ -16,20 +17,30 @@ public class DesignTimeService : ISingletonService
         var services = new ServiceCollection();
 
         var optionsBuilder = new DbContextOptionsBuilder<TempDbContext>();
-        optionsBuilder.UseSqlServer(connectionString);
-
+        IDesignTimeServices designTimeServices;
         if (databaseProvider == DatabaseProvider.MSSQL)
+        {
             optionsBuilder.UseSqlServer(connectionString);
+
+#pragma warning disable EF1001 // Internal EF Core API usage.
+            designTimeServices = new SqlServerDesignTimeServices();
+            designTimeServices.ConfigureDesignTimeServices(services);
+#pragma warning restore EF1001 // Internal EF Core API usage.
+        }
+
+        if (databaseProvider == DatabaseProvider.Sqlite)
+        {
+            optionsBuilder.UseSqlite(connectionString);
+#pragma warning disable EF1001 // Internal EF Core API usage.
+            designTimeServices = new SqliteDesignTimeServices();
+            designTimeServices.ConfigureDesignTimeServices(services);
+#pragma warning restore EF1001 // Internal EF Core API usage.
+        }
 
         var dbContext = new TempDbContext(optionsBuilder.Options);
 
         services.AddEntityFrameworkDesignTimeServices();
         services.AddDbContextDesignTimeServices(dbContext);
-
-#pragma warning disable EF1001 // Internal EF Core API usage.
-        var designTimeServices = new SqlServerDesignTimeServices();
-        designTimeServices.ConfigureDesignTimeServices(services);
-#pragma warning restore EF1001 // Internal EF Core API usage.
 
         var serviceProvider = services.BuildServiceProvider();
 

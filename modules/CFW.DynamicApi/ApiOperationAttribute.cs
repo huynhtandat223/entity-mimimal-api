@@ -17,6 +17,8 @@ public class ApiOperationAttribute : Attribute
 
     public string RouteGroup { get; }
 
+    public Type[]? Interceptors { get; set; }
+
     public ApiOperationAttribute(string routeGroup)
     {
         RouteGroup = routeGroup;

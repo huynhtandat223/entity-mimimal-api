@@ -1,12 +1,12 @@
 ﻿using CFW.AppHost.Features.Endpoints.Configurations;
-using CFW.AppHost.Features.Endpoints.Models;
+using CFW.AppHost.Infrastructures.DbContextExtensions.Models.Runtimes;
 using CFW.Core.Builders.RuntimeTypeBuilders;
 using CFW.Core.Dependencies;
 using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace CFW.AppHost.Features.Endpoints.Services;
+namespace CFW.AppHost.Infrastructures.DbContextExtensions.Services.Runtimes;
 
 public class RuntimeTypeRegistry : ISingletonService
 {
@@ -78,7 +78,8 @@ public class RuntimeTypeRegistry : ISingletonService
                 ModuleBuilder = moduleBuilder
             }, propDefs);
 
-        var fullPath = Path.Combine(_runtimeAsmConfig.GetRuntimeEntitiesDirOrDefault(), fullTypeName + ".dll");
+        var fullPath = Path.Combine(_runtimeAsmConfig.GetRuntimeEntitiesDirOrDefault()
+            , fullTypeName + $"{DateTime.Now.ToString("yyyyMMddhhmmss")}.dll");
         assemblyBuilder.Save(fullPath);
 
         var loadedType = Assembly.LoadFrom(fullPath).GetType(fullTypeName);

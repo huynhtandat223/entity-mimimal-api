@@ -1,0 +1,48 @@
+﻿@page "/{*Path}"
+@using CFW.AppHost.Blazor.ApiClient
+@using CFW.AppHost.Blazor.Components.UI
+@inject IApiClient ApiClient
+
+<PageTitle>@PageTitle</PageTitle>
+
+
+<DynamicComponent Type="ComponentType" Parameters="Parameters" />
+
+@code {
+    [Parameter]
+    public string? Path { get; set; }
+
+    public string PageTitle => "Dynamic Page";
+
+    private Type? ComponentType;
+
+    public Dictionary<string, object> Parameters;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ComponentType = typeof(CommonGridPage<>).MakeGenericType(typeof(Value4));
+
+        Func<LoadDataArgs, Task<(IEnumerable<Value4> Value, long? Count)>> func = async(args)
+        =>
+        {
+            var t = await ApiClient.TenantsGET2Async(filter: args.Filter, top: args.Top, skip: args.Skip, orderby: args.OrderBy, count: true);
+            return (t.Value, t.OdataCount);
+        };
+
+        var columns = new Dictionary<string, Type>()
+        {
+            { "Id", typeof(int) },
+            { "Name", typeof(string) },
+        };
+        var parameters = new Dictionary<string, object>
+        {
+            { "LoadFunc", func },
+            { "Columns",  columns}
+        };
+
+        Parameters = parameters;
+
+
+        await Task.CompletedTask;
+    }
+}

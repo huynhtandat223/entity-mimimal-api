@@ -16,7 +16,6 @@ public class ModuleInitializer : IModuleInitializer
             .AddEntityFrameworkStores<AppDbContext>();
 
         builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
-
         await Task.CompletedTask;
     }
 

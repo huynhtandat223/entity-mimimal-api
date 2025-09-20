@@ -1,6 +1,6 @@
 ﻿using CFW.DynamicApi.Buiders;
+using CFW.DynamicApi.Interceptors;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CFW.DynamicApi;
@@ -50,6 +50,20 @@ public class DynamicApiRegistry
                 apiOpration!.HttpMethod = operation.HttpMethod.ToString();
                 apiOpration.Route = operation.RouteName!; //use ApiOperation attr it can null
                 apiOpration.EntityGroup = apiGroup;
+                apiOpration.RequestType = requestType;
+                apiOpration.ResponseType = responseType;
+                if (operation.Interceptors?.Any() == true)
+                {
+                    var interceptorFactories = operation.Interceptors
+                        .Select(x => new Func<IServiceProvider, IOperationInterceptor>(sp
+                            => (IOperationInterceptor)sp.GetRequiredService(x)))
+                        .ToList();
+                    apiOpration.InterceptorFactories.AddRange(interceptorFactories);
+
+                    //allow all properties if use interceptor in attribute
+                    apiOpration.AllowAllProperties = true;
+                }
+
                 apiGroup.Operations.Add(apiOpration);
             }
 
@@ -60,14 +74,12 @@ public class DynamicApiRegistry
     internal void MapApi(WebApplication app, ContainerConfiguration containerConfig)
     {
         var containerGroupBuilder = app
-            .MapGroup(containerConfig.RoutePrefix)
-            .WithGroupName(containerConfig.RoutePrefix);
+            .MapGroup(containerConfig.RoutePrefix);
 
         foreach (var apiGroup in _apiGroups)
         {
             var group = containerGroupBuilder
-                .MapGroup(apiGroup.RouteName)
-                .WithGroupName(apiGroup.RouteName);
+                .MapGroup(apiGroup.RouteName);
 
             if (!apiGroup.IsAllowAnonymous)
             {
@@ -76,9 +88,7 @@ public class DynamicApiRegistry
 
             foreach (var operation in apiGroup.Operations)
             {
-                var routeHandlerBuilder = operation.MapApi(group);
-                routeHandlerBuilder
-                    .WithTags(apiGroup.RouteName);
+                operation.MapApi(group);
             }
         }
     }
